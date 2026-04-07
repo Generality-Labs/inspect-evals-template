@@ -10,7 +10,7 @@ fallback_version = "0.0.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["examples*"]
+include = ["examples*", "gpqa*"]
 
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
@@ -91,7 +91,7 @@ warn_redundant_casts = true
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["examples.*"]
+module = ["examples.*", "gpqa.*"]
 warn_return_any = true
 disallow_untyped_defs = true
 disallow_any_generics = true
@@ -139,6 +139,7 @@ dependencies = [
 # Register each evaluation so Inspect can discover it:
 #   my_eval = "my_eval._registry"
 [project.entry-points.inspect_ai]
+gpqa = "gpqa._registry"
 
 [dependency-groups]
 dev = [
