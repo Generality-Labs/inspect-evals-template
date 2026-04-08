@@ -38,7 +38,7 @@ registry. Supports multiple evaluations in a single repository.
 
    ```toml
    [project.entry-points.inspect_ai]
-   my_eval = "my_eval._registry"
+   my_eval = "my_eval"
    ```
 
 4. Run it: `uv run inspect eval my_eval/my_task --model openai/gpt-5-nano`
@@ -54,8 +54,7 @@ entry points in `pyproject.toml`. Tests go in `tests/<eval_name>/`.
 ```text
 src/
   <eval_name>/          # Your evaluation
-    __init__.py         # Exports task function(s)
-    _registry.py        # Registers tasks with Inspect
+    __init__.py         # Exports task function(s) for Inspect discovery
     <eval_name>.py      # Task implementation
     eval.yaml           # Evaluation metadata
   examples/             # Example evaluations (not registered)
@@ -67,12 +66,12 @@ tests/
 ## Adding evaluations
 
 1. Create a new directory under `src/` (e.g., `src/my_eval/`) with an
-   `__init__.py` and a `_registry.py` that imports your `@task` functions
+   `__init__.py` that exports your `@task` functions
 2. Add an entry point in `pyproject.toml`:
 
    ```toml
    [project.entry-points.inspect_ai]
-   my_eval = "my_eval._registry"
+   my_eval = "my_eval"
    ```
 
 3. Add the module name to `[tool.setuptools.packages.find]` include list

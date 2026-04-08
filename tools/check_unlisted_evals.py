@@ -73,7 +73,7 @@ def main() -> int:
         if not is_registered:
             errors.append(
                 f"  {name}: not registered in pyproject.toml "
-                f'(add: {name} = "{name}._registry")'
+                f'(add: {name} = "{name}")'
             )
 
     if errors:

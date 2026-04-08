@@ -138,11 +138,11 @@ dependencies = [
 
 # Register each evaluation so Inspect can discover it.
 # Example (uncomment and adapt):
-#   my_eval = "my_eval._registry"
+#   my_eval = "my_eval"
 #
 # This registers the "my_eval" package so that
-# `inspect eval my_eval/task_name` works. The _registry module
-# should import your @task functions.
+# `inspect eval my_eval/task_name` works. The __init__.py
+# should export your @task functions.
 # Note: examples are NOT registered -- only your evaluations under src/.
 [project.entry-points.inspect_ai]
 

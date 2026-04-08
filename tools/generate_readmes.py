@@ -418,10 +418,8 @@ def _format_parameter(param: dict[str, Any]) -> str:
 def extract_task_parameters(task_name: str, package_name: str) -> list[dict[str, Any]]:
     """Extract parameter information from a @task decorated function.
 
-    Tries to import the task function from:
-    1. <package_name>._registry (registered evals)
-    2. <package_name>.<module_name> where module_name = task_name's parent
-    3. Scanning the package for @task-decorated functions
+    Tries to import the task function from the package __init__
+    (which should export @task functions).
 
     Args:
         task_name: Name of the task function
@@ -432,22 +430,13 @@ def extract_task_parameters(task_name: str, package_name: str) -> list[dict[str,
     """
     task_func = None
 
-    # Strategy 1: Try _registry module
+    # Import the package and look for the task function
     try:
-        registry = importlib.import_module(f"{package_name}._registry")
-        if hasattr(registry, task_name):
-            task_func = getattr(registry, task_name)
+        pkg = importlib.import_module(package_name)
+        if hasattr(pkg, task_name):
+            task_func = getattr(pkg, task_name)
     except (ImportError, ModuleNotFoundError):
         pass
-
-    # Strategy 2: Try the package __init__ (which should export task functions)
-    if task_func is None:
-        try:
-            pkg = importlib.import_module(package_name)
-            if hasattr(pkg, task_name):
-                task_func = getattr(pkg, task_name)
-        except (ImportError, ModuleNotFoundError):
-            pass
 
     if task_func is None:
         logger.warning(
