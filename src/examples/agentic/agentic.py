@@ -20,7 +20,7 @@ You have access to a bash shell and Python interpreter in a sandboxed environmen
 When you have found the answer, submit it by printing: ANSWER: <your answer>
 """.strip()
 
-DEFAULT_MESSAGE_LIMIT = 30
+DEFAULT_MESSAGE_LIMIT = 30 ## on what planet are we hard-coding parameters? - Justin
 
 COMPOSE_FILE = str(Path(__file__).parent / "compose.yaml")
 
