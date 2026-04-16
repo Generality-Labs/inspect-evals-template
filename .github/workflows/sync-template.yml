@@ -158,5 +158,6 @@ jobs:
           body="$body\n\nManaged files are listed in [MANAGED_FILES.md](MANAGED_FILES.md)."
 
           gh pr create \
+            --head "$branch_name" \
             --title "chore: sync managed files from template ($template_version)" \
             --body "$(echo -e "$body")"
