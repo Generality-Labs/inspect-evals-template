@@ -53,7 +53,7 @@ jobs:
 
       - name: Add template remote
         run: |
-          git remote add template https://github.com/ArcadiaImpact/inspect-eval-template.git 2>/dev/null || true
+          git remote add template https://github.com/ArcadiaImpact/inspect-evals-template.git 2>/dev/null || true
           git fetch template main
 
       - name: Extract managed files list
@@ -158,5 +158,6 @@ jobs:
           body="$body\n\nManaged files are listed in [MANAGED_FILES.md](MANAGED_FILES.md)."
 
           gh pr create \
+            --head "$branch_name" \
             --title "chore: sync managed files from template ($template_version)" \
             --body "$(echo -e "$body")"
