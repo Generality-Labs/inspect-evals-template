@@ -1,4 +1,3 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: check-trajectories-workflow
 description: Use Inspect Scout to analyze agent trajectories from evaluation log files. Runs default and custom scanners to detect external failures, formatting issues, reward hacking, and ethical refusals. Use when user asks to check/analyze agent trajectories. Trigger when the user asks you to run the "Check Agent Trajectories" workflow.
@@ -39,7 +38,7 @@ This workflow uses Inspect Scout to automatically analyze agent trajectories. It
     ```
 
     Ask the user whether each scanner should invalidate successes, failures, both, or neither.
-6. Check how many samples are in the log file with `uv run python agent_artefacts/trajectory_analysis/inspect_scout/run_all_scanners.py <log_file> --dry-run`. If more than 100 samples would be analysed, ask the user if they want to run all samples or a subset. Tell them that guidance is to run at least 100 samples, and ask them if they want to run any more than that.
+6. Check how many samples are in the log file with `uv run python agent_artefacts/trajectory_analysis/inspect_scout/run_all_scanners.py <log_file> --dry-run`. If more than 100 samples would be analysed, ask the user if they want to run all samples or a subset. Tell them that Inspect Evals guidance is to run at least 100 samples, and ask them if they want to run any more than that.
 7. Provide the user the command they can use to run the scanners. If the user asks you to run it, you can do so.
     a. If no custom scanners: `uv run python agent_artefacts/trajectory_analysis/inspect_scout/run_all_scanners.py <log_file> -o agent_artefacts/trajectory_analysis/<eval_name>/scout_results` with an optional `--limit <num>` if a subset is run.
     b. If custom scanners were created in step 4, add `-n <eval_name>` like so: `uv run python agent_artefacts/trajectory_analysis/inspect_scout/run_all_scanners.py <log_file> -n <eval_name> -o agent_artefacts/trajectory_analysis/<eval_name>/scout_results`

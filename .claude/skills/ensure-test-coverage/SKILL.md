@@ -1,4 +1,3 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: ensure-test-coverage
 description: Ensure test coverage for a single evaluation - both reviewing existing tests and creating missing ones. Analyzes testable components, checks tests against repository conventions, reports coverage gaps, and creates or improves tests. Use when user asks to check/review/create/add/ensure tests for an eval. Use whenever you are asked to review an evaluation that contains tests, or whenever you need to write a suite of tests. Do NOT use for fixing a specific failing CI test (use ci-maintenance-workflow instead).
@@ -20,7 +19,7 @@ If not provided, ask the user.
 
 ### Phase 1: Discover Testable Components
 
-Analyze the eval's source code in `src/<eval_name>/` to build a complete inventory of what needs testing.
+Analyze the eval's source code in `src/inspect_evals/<eval_name>/` to build a complete inventory of what needs testing.
 
 #### 1.1 Scan for decorated functions
 
@@ -83,7 +82,7 @@ If autolint reports failures, those become Priority 1 items to fix in Phase 4.
 Run `pytest-cov` to get line-level coverage percentages. Include `--runslow` to run slow tests — they often exercise significantly more code:
 
 ```bash
-uv run pytest tests/<eval_name>/ --cov=src/<eval_name> --cov-report=term-missing -q --runslow
+uv run pytest tests/<eval_name>/ --cov=src/inspect_evals/<eval_name> --cov-report=term-missing -q --runslow
 ```
 
 This shows per-file coverage and which specific lines are missed. Record:
@@ -100,7 +99,94 @@ Read the source code for missed lines to understand what they do. Categorize the
 
 **There is no fixed coverage threshold.** Instead, use judgment: all major branches and behaviors should have tests. Focus on whether important logic paths are exercised, not on hitting a number. When evaluating gaps, ask: "If this code path broke, would we catch it?" If the answer is no and the path contains meaningful logic (not just framework glue), it's a gap worth addressing. It is entirely plausible that some decently large gaps include the same code that is checked elsewhere, but if so, this should be justified to the user. Do not assume a gap is fine because testing it would be difficult - that likely indicates a gap in our ability to mock relevant entities for testing. Let the user decide what's worth doing.
 
+Reference points from existing evals as of 13/02/2026:
+
+- `gpqa` (simple eval, 17 statements, no custom scorer/solver): 100% coverage
+- `healthbench` (complex eval, 317 statements, LLM-graded scorer): 91% overall with `--runslow`. The remaining gaps are the LLM judge call path — testing it would require mocking the judge model, which is valuable but not trivial. This likely requires a few new tests.
+- `gdm_self_reasoning` (complex eval, 945 statements, Docker-heavy): 51% overall with `--runslow`. Most missed code is in solver files that only execute inside Docker sandboxes with real model interactions — these should be mocked with our utility functions, and if this is not possible that indicates a problem. This should be tested more thoroughly.
+
 When evaluating gaps, ask: "If this code path broke, would we catch it?" If the answer is no and the path contains meaningful logic (not just framework glue or duplicated code that is exercised elsewhere), it's a gap worth addressing. If the gap involves duplicated code that is addressed elsewhere, consider whether it can be refactored away without harming readability / maintainability too much. If so, recommend this to the user.
+
+**Worked example: healthbench scorer.py at 87% coverage:**
+
+```text
+Name                                               Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------------
+src/inspect_evals/healthbench/scorer.py              195     26    87%   37, 276, 285, 417-433, 491-493, 498-501, 586, 599, 638
+```
+
+Not every missed line is a problem. Here are three real examples from healthbench to illustrate the judgment needed:
+
+**(a) Line 37 — defensive guard, not a problem:**
+
+```python
+def macro_f1(y_true: list[bool], y_pred: list[bool]) -> float:
+    from sklearn.metrics import f1_score
+
+    if not y_true or not y_pred or len(y_true) != len(y_pred):
+        return 0.0 # Line 37
+
+    return float(f1_score(y_true, y_pred, labels=[False, True], average="macro"))
+```
+
+This is a simple input validation guard returning a default. Missing coverage here is fine. Adding tests here would just add unnecessary bloat to the test package.
+
+**(b) Lines 417-433 — untested branch with real logic, worth testing:**
+
+```python
+        if include_subset_scores:
+            category_scores = calculate_category_scores(scores, ...)
+
+            # Add flattened axis scores
+            for axis, data in category_scores["axis_scores"].items():
+                prefix = f"axis_{axis}"
+                result[f"{prefix}_score"] = data["score"]
+                result[f"{prefix}_std"] = data["std_error"]
+                result[f"{prefix}_n_samples"] = data["n_samples"]
+                result[f"{prefix}_criteria_count"] = data["criteria_count"]
+
+            # Add flattened theme scores
+            for theme, data in category_scores["theme_scores"].items():
+                prefix = f"theme_{theme}"
+                result[f"{prefix}_score"] = data["score"]
+                result[f"{prefix}_std"] = data["std_error"]
+                result[f"{prefix}_n_samples"] = data["n_samples"]
+                result[f"{prefix}_criteria_count"] = data["criteria_count"]
+```
+
+No single line here is complex, but this is an entire code path — the `include_subset_scores=True` branch — that is never exercised. There is sufficient complexity here that it is possible for a detail to be missed which a test can catch.
+
+**(c) Lines 491-493, 498-501 — borderline, but examining the code suggests worth testing:**
+
+```python
+    grading_response_dict = {}
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            judge_response = await judge.generate(input=grader_prompt, ...)
+            grading_response = judge_response.completion
+            grading_response_dict = parse_json_to_dict(grading_response)
+
+            if "criteria_met" in grading_response_dict:
+                label = grading_response_dict["criteria_met"]  # line 491
+                if label is True or label is False:
+                    break
+            logger.warning(
+                f"Grading failed due to bad JSON output, retrying... (attempt {attempt + 1})"
+            )
+
+        except Exception as e:  # line 498
+            logger.warning(f"Grading attempt {attempt + 1} failed: {str(e)}")
+            if attempt == max_retries - 1:
+                grading_response_dict = {
+                    "criteria_met": False,
+                    "explanation": f"Failed to parse judge response: {str(e)}",
+                }
+
+    criteria_met = grading_response_dict.get("criteria_met", False)
+```
+
+These lines individually look like fairly simple validation guards, but represent an important check to ensure the judge doesn't get caught in an infinite loop. A single test should be able to check both of these, and does seem worth doing.
 
 #### 2.3 Evaluate test quality (beyond autolint and coverage)
 
@@ -223,7 +309,7 @@ uv run ruff format tests/<eval_name>/
 uv run python tools/run_autolint.py <eval_name>
 
 # Re-measure coverage
-uv run pytest tests/<eval_name>/ --cov=src/<eval_name> --cov-report=term-missing -q --runslow
+uv run pytest tests/<eval_name>/ --cov=src/inspect_evals/<eval_name> --cov-report=term-missing -q --runslow
 ```
 
 Fix any failures before presenting results.

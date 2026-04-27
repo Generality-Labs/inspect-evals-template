@@ -1,4 +1,3 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 name: Claude Code Review
 on:
   pull_request_target:
@@ -19,26 +18,7 @@ permissions:
   actions: read # Required for listing workflow runs
 
 jobs:
-  check-secrets:
-    runs-on: ubuntu-latest
-    outputs:
-      auth_method: ${{ steps.check.outputs.auth_method }}
-    steps:
-      - name: Check for required secrets
-        id: check
-        run: |
-          if [ -n "${{ secrets.ANTHROPIC_ROLE_ARN }}" ]; then
-            echo "auth_method=bedrock" >> $GITHUB_OUTPUT
-          elif [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
-            echo "auth_method=api_key" >> $GITHUB_OUTPUT
-          else
-            echo "::warning::Neither ANTHROPIC_ROLE_ARN nor ANTHROPIC_API_KEY is configured — Claude review will be skipped"
-            echo "auth_method=none" >> $GITHUB_OUTPUT
-          fi
-
   review:
-    needs: check-secrets
-    if: needs.check-secrets.outputs.auth_method != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -46,7 +26,7 @@ jobs:
     steps:
       - name: Validate trigger
         id: validate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const eventName = context.eventName;
@@ -101,7 +81,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ format('refs/pull/{0}/head', env.PR_NUMBER) }}
-          fetch-depth: 0
+          fetch-depth: 0 # Fetch all history so merge-base can be found
 
       - name: Get PR Info
         if: steps.validate.outputs.skip != 'true'
@@ -115,10 +95,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Ensure all standards documents come from the triggering branch.
+      # Useful for testing and critical for any fully automatic review loops in future.
       - name: Use review config from workflow branch
         if: steps.validate.outputs.skip != 'true'
         run: |
           for f in AGENTS.md EVALUATION_CHECKLIST.md BEST_PRACTICES.md \
+                   agent_artefacts/repo_context/REPO_CONTEXT.md \
                    .github/actions/claude-setup/action.yaml; do
             if git show origin/${{ github.ref_name }}:$f > /dev/null 2>&1; then
               mkdir -p "$(dirname "$f")"
@@ -132,6 +114,8 @@ jobs:
           && github.event_name != 'workflow_dispatch'
         id: rate-limit-actor
         run: |
+          # For pull_request_target events, the actor is the PR author.
+          # For issue_comment (/review), the actor is the commenter.
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
             echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
           else
@@ -161,6 +145,9 @@ jobs:
           ACTOR="${{ steps.rate-limit-actor.outputs.actor }}"
           ONE_HOUR_AGO=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)
 
+          # Get recent run IDs and creation times for this actor (sorted ascending).
+          # After fetching all runs, we filter by actor client-side because the API's
+          # actor parameter doesn't reliably match the triggering user for all event types.
           RECENT_RUNS=$(gh api \
             "repos/${GITHUB_REPOSITORY}/actions/workflows/claude-review.yaml/runs?per_page=100" \
             --jq "[.workflow_runs[] | {databaseId: .id, createdAt: .created_at, actor: .actor.login} | select(.actor == \"$ACTOR\" and .createdAt > \"$ONE_HOUR_AGO\")] | sort_by(.createdAt)")
@@ -168,6 +155,10 @@ jobs:
           RECENT_COUNT=$(echo "$RECENT_RUNS" | jq 'length')
           echo "Total workflow runs in the last hour: $RECENT_COUNT"
 
+          # For each run, check whether the "Run Code Review with Claude" step
+          # was actually executed (not skipped). A "skipped" conclusion means the
+          # run was rate-limited or failed validation — none of these consume
+          # review resources and shouldn't count.
           FULL_REVIEW_CREATED_ATS=()
 
           for i in $(seq 0 $((RECENT_COUNT - 1))); do
@@ -191,7 +182,13 @@ jobs:
           FULL_REVIEW_COUNT=${#FULL_REVIEW_CREATED_ATS[@]}
           echo "Full review runs (excluding drafts and skipped): $FULL_REVIEW_COUNT"
 
+          # -gt (not -ge) because the count includes the current run itself
+          # (status "pending", which is != "skipped"). So a count of 6 means
+          # 5 prior reviews + this one — the first time we should block.
           if [ "$FULL_REVIEW_COUNT" -gt 5 ]; then
+            # The array is already sorted ascending (iterated from sorted input).
+            # For the count to drop back to 5, (count - 5) old runs must age past
+            # 1 hour. The last of those is at index (count - 6).
             PIVOT_INDEX=$((FULL_REVIEW_COUNT - 6))
             PIVOT_CREATED="${FULL_REVIEW_CREATED_ATS[$PIVOT_INDEX]}"
             RETRY_AFTER=$(date -u -d "$PIVOT_CREATED + 1 hour" +%H:%M)
@@ -205,7 +202,7 @@ jobs:
 
       - name: Handle rate limit exceeded
         if: steps.rate-limit.outputs.rate_limited == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -213,6 +210,7 @@ jobs:
             const retryAfter = '${{ steps.rate-limit.outputs.retry_after }}';
             const marker = '<!-- claude-rate-limit -->';
 
+            // Minimize previous rate-limit comments
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -235,6 +233,7 @@ jobs:
               }
             }
 
+            // Post new rate-limit comment
             const actor = '${{ steps.rate-limit-actor.outputs.actor }}';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -250,10 +249,8 @@ jobs:
           && steps.rate-limit.outputs.rate_limited != 'true'
         run: echo "proceed=true" >> $GITHUB_OUTPUT
 
-      - name: Setup (Bedrock)
-        if: >-
-          steps.gate.outputs.proceed == 'true'
-          && needs.check-secrets.outputs.auth_method == 'bedrock'
+      - name: Setup
+        if: steps.gate.outputs.proceed == 'true'
         id: setup
         uses: ./.github/actions/claude-setup
         with:
@@ -278,7 +275,7 @@ jobs:
 
       - name: Fetch previous review comments
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUM: ${{ env.PR_NUMBER }}
         with:
@@ -288,6 +285,10 @@ jobs:
             const prNumber = Number(process.env.PR_NUM);
             const reviewPattern = /^## Claude Code Review(\r?\n){2}/;
 
+            // We use GraphQL here instead of the REST API because the REST
+            // issues.listComments endpoint does not include the `isMinimized`
+            // field. We need it to filter out old reviews that have already
+            // been collapsed by the "Hide Previous Claude Review Comments" step.
             let allComments = [];
             try {
               let cursor = null;
@@ -328,6 +329,8 @@ jobs:
               return;
             }
 
+            // Only include Claude's own reviews. Human discussion is captured
+            // separately in HUMAN_FEEDBACK.md to avoid duplication.
             const reviews = allComments
               .filter(c => !c.isMinimized && reviewPattern.test(c.body))
               .map(c => ({
@@ -354,7 +357,7 @@ jobs:
 
       - name: Fetch reviewer feedback
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PR_NUM: ${{ env.PR_NUMBER }}
         with:
@@ -366,6 +369,7 @@ jobs:
             content += `This file contains review activity on this PR from human reviewers (bot comments are excluded).\n`;
             content += `Use this context to understand what has already been discussed, agreed, or disputed.\n\n`;
 
+            // 1. Fetch PR issue comments (general discussion at the bottom of the PR)
             let issueComments = [];
             try {
               issueComments = await github.paginate(github.rest.issues.listComments, {
@@ -378,6 +382,7 @@ jobs:
               core.warning(`Failed to fetch issue comments: ${error.message}`);
             }
 
+            // 2. Fetch formal PR reviews (approve, request changes, comment)
             let reviews = [];
             try {
               reviews = await github.paginate(github.rest.pulls.listReviews, {
@@ -390,6 +395,7 @@ jobs:
               core.warning(`Failed to fetch PR reviews: ${error.message}`);
             }
 
+            // 3. Fetch inline review comments (comments on specific diff lines)
             let reviewComments = [];
             try {
               reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
@@ -402,6 +408,10 @@ jobs:
               core.warning(`Failed to fetch review comments: ${error.message}`);
             }
 
+            // Build a unified timeline sorted by date, excluding bot users.
+            // Bot comments (especially Claude's own reviews) are already captured
+            // in CLAUDE_REVIEWS.md — including them here creates a feedback loop
+            // where Claude treats its own prior summaries as human reviewer context.
             const isBot = (user) => user?.type === 'Bot';
             const events = [];
 
@@ -418,13 +428,13 @@ jobs:
 
             for (const r of reviews) {
               if (isBot(r.user)) continue;
-              if (!r.body && r.state === 'COMMENTED') continue;
+              if (!r.body && r.state === 'COMMENTED') continue; // Skip empty "commented" reviews
               events.push({
                 type: 'review',
                 author: r.user?.login ?? 'unknown',
                 created_at: r.submitted_at,
                 url: r.html_url,
-                state: r.state,
+                state: r.state, // APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED
                 body: r.body || '(no body)',
               });
             }
@@ -471,11 +481,11 @@ jobs:
       - name: Run Code Review with Claude
         if: steps.gate.outputs.proceed == 'true'
         id: claude-code
-        uses: anthropics/claude-code-action@v1
+        # Pinned: v1 floating tag updated to SDK 0.2.96 which breaks Bedrock SigV4 auth (403).
+        # Revert to @v1 once upstream is fixed.
+        uses: anthropics/claude-code-action@6e2bd52842c65e914eba5c8badd17560bd26b5de # v1 (SDK 0.2.92)
         with:
-          use_bedrock: ${{ needs.check-secrets.outputs.auth_method == 'bedrock' }}
-          anthropic_api_key: ${{ needs.check-secrets.outputs.auth_method == 'api_key' && secrets.ANTHROPIC_API_KEY || '' }}
-          model: ${{ needs.check-secrets.outputs.auth_method == 'bedrock' && steps.setup.outputs.claude_model || vars.CLAUDE_MODEL || 'claude-opus-4-6-20250725' }}
+          use_bedrock: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           allowed_non_write_users: "*"
           allowed_bots: "claude-code-aisi[bot]"
@@ -526,15 +536,16 @@ jobs:
               - Never be dismissive or condescending. Frame it as "I may be wrong, but looking at the code..." not "The reviewer is incorrect."
               - When in doubt, don't push back. The bar for contradicting a human reviewer is high: you must be confident they are obviously wrong.
           claude_args: |
-            --allowedTools "Bash(git diff *),Bash(git log *),View,GlobTool,GrepTool,Read,Write"
+            --model ${{ steps.setup.outputs.claude_model }} --allowedTools "Bash(git diff *),Bash(git log *),View,GlobTool,GrepTool,Read,Write"
           show_full_output: true
 
       - name: Hide Previous Claude Review Comments
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Get all comments on the PR (paginated to handle 100+ comments)
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -542,6 +553,7 @@ jobs:
               per_page: 100,
             });
 
+            // Find and hide comments that start with "## Claude Code Review"
             const targetPattern = /^## Claude Code Review(\r?\n){2}/;
 
             for (const comment of comments) {
@@ -566,7 +578,7 @@ jobs:
 
       - name: Post PR Review Comment
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -581,11 +593,19 @@ jobs:
             const review = fs.readFileSync(summaryFile, 'utf8');
 
             if (review.trim()) {
+              const footer =
+                "\n\n---\n\n" +
+                "<sub><em>Maintainers: comment <code>/claude &lt;instruction&gt;</code> " +
+                "on this PR and Claude will push a fix. To batch multiple changes, submit " +
+                "a review with body <code>/claude</code> and inline comments — Claude will " +
+                "address them all in one run. Single inline comments starting with " +
+                "<code>/claude</code> also work.</em></sub>";
+
               await github.rest.issues.createComment({
                 issue_number: Number(process.env.PR_NUMBER),
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: "## Claude Code Review\n\n" + review.trim()
+                body: "## Claude Code Review\n\n" + review.trim() + footer
               });
             } else {
               console.log('SUMMARY.md exists but is empty');

@@ -1,12 +1,11 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: eval-quality-workflow
-description: Fix or review a single evaluation against all EVALUATION_CHECKLIST.md standards. Use "fix" mode to refactor an eval into compliance, or "review" mode to assess compliance without making changes. Use when user asks to fix, review, or check an evaluation's quality. Trigger when the user asks you to run the "Fix An Evaluation" or "Review An Evaluation" workflow. Do NOT use for reviewing ALL evals against a single code quality standard.
+description: Fix or review a single evaluation against all EVALUATION_CHECKLIST.md standards. Use "fix" mode to refactor an eval into compliance, or "review" mode to assess compliance without making changes. Use when user asks to fix, review, or check an evaluation's quality. Trigger when the user asks you to run the "Fix An Evaluation" or "Review An Evaluation" workflow. Do NOT use for reviewing ALL evals against a single code quality standard (use code-quality-review-all instead).
 ---
 
 # Evaluation Quality — Fix or Review
 
-This skill covers two closely related workflows for a single evaluation in `src/`:
+This skill covers two closely related workflows for a single evaluation in `src/inspect_evals/`:
 
 - **Fix An Evaluation**: Refactor the evaluation to comply with EVALUATION_CHECKLIST.md
 - **Review An Evaluation**: Assess compliance without making changes
@@ -33,7 +32,7 @@ Our standards are in EVALUATION_CHECKLIST.md, with links to BEST_PRACTICES.md an
     c. If you have Medium confidence, make a note of this in UNCERTAINTIES.md along with any questions you have, then do your best to solve it as per the High confidence workflow.
     d. If you have Low confidence, make a note of this in UNCERTAINTIES.md along with any questions you have, then do not attempt to solve it and leave the checkmark blank.
 
-Do not attempt the evaluation report. You should tell the user in SUMMARY.md that producing evaluation reports automatically requires a separate workflow (the `/eval-report-workflow` skill). You should still perform the initial tests to ensure the evaluation runs at all. The model you should test on is the one that the example commands in the evaluation's README uses. For example, `uv run inspect eval <eval_name>/<task_name> --model openai/gpt-5-nano --limit 2`
+Do not attempt the evaluation report. You should tell the user in SUMMARY.md that producing evaluation reports automatically requires a separate workflow (the `/eval-report-workflow` skill). You should still perform the initial tests to ensure the evaluation runs at all. The model you should test on is the one that the example commands in the evaluation's README uses. For example, `uv run inspect eval inspect_evals/<eval_name> --model openai/gpt-5-nano --limit 2`
 
 Your task is over when you have examined every single checklist item except for the evaluation report and completed each one that you are capable of. Do a final pass over NOTES.md and UNCERTAINTIES.md, then create a SUMMARY.md file and summarise what you have done. Then inform the user that your task is finished.
 

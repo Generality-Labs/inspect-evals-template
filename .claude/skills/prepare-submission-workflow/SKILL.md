@@ -1,25 +1,24 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: prepare-submission-workflow
-description: Prepare an evaluation for publishing — run quality checks, tests, linting, verify eval.yaml and README completeness. Use when user asks to prepare an eval for publishing or finalize before release. Trigger when the user asks you to run the "Prepare Evaluation For Publishing" workflow.
+description: Prepare an evaluation for PR submission — add dependencies, tests, linting, eval.yaml, README, and changelog. Use when user asks to prepare an eval for submission or finalize a PR. Trigger when the user asks you to run the "Prepare Evaluation For Submission" workflow.
 ---
 
-# Prepare Eval For Publishing
+# Prepare Eval For Submission
 
 ## Workflow Steps
 
-To prepare an evaluation for publishing:
+To prepare an evaluation for submission as a pull request:
 
-1. Add custom dependencies in the [pyproject.toml](pyproject.toml) file, if required.
+1. Add custom dependencies in the [pyproject.toml][pyproject] file, if required. Don't forget to add your evaluation to the `[test]` dependencies if you've added any custom dependencies.
 
    ```toml
    [project.optional-dependencies]
-   your_evaluation = ["example-python-package"]
+   worldsense = ["pandas", "matplotlib"]  # existing groups
+   your_evaluation = ["example-python-package"]  # add this line for your evaluation
 
-   [project]
-   dependencies = [
-      "inspect_ai",
-      # ... other deps
+   test = [
+      "inspect_evals[dev]",  # existing groups
+      "inspect_evals[your_evaluation]",  # add this line for your evaluation
    ]
    ```
 
@@ -27,9 +26,9 @@ To prepare an evaluation for publishing:
 
    Make sure your module does not import your custom dependencies when the module is imported. This breaks the way `inspect_ai` imports tasks from the registry.
 
-   To check for this, `pip uninstall` your optional dependencies and run another eval with `--limit=0`. If it fails due to one of your imports, you need to change how you are importing that dependency.
+   To check for this, `pip uninstall` your optional dependences and run another eval with `--limit=0`. If it fails due to one of your imports, you need to change how you are importing that dependency
 
-2. Add pytest tests covering the custom functions included in your evaluation. See the Testing Standards section in CONTRIBUTING.md for more details.
+2. Add pytest tests covering the custom functions included in your evaluation. See the [Testing Standards][testing-standards] section for more details.
 
 3. Run `pytest` to ensure all new and existing tests pass.
 
@@ -39,33 +38,30 @@ To prepare an evaluation for publishing:
    uv sync --extra test
    ```
 
-   Then run the tests:
+   Then run the tests
 
    ```bash
-   uv run pytest tests/<eval_name>
+   uv run pytest
    ```
 
-4. Add an `eval.yaml` file to your evaluation directory (e.g., `src/<eval_name>/eval.yaml`) to include it in the documentation. See the eval.yaml Reference section in CONTRIBUTING.md for a complete example and field documentation.
+4. Add an `eval.yaml` file to your evaluation directory (e.g., `src/inspect_evals/your_eval/eval.yaml`) to include it in the documentation (which is automatically generated and deployed by Github Actions after merge). See the [eval.yaml Reference][evalyaml-reference] section in CONTRIBUTING.md for a complete example and field documentation.
+
+   Don't forget to add any custom dependencies to [pyproject.toml][pyproject] if applicable.
 
 5. Run linting, formatting, and type checking and address any issues:
 
    ```bash
-   make check
+   make check EVAL=<eval_name>
    ```
 
-   Note that CI automatically runs these checks, so be sure your contribution passes before publishing.
+   Note that we automatically run these commands on all incoming PRs, so be sure your contribution passes those before opening a PR. run_autolint.py handles [automated checks][automated-checks]
 
-6. Fill in the missing sections of the README.md which are marked with 'TODO:'.
+6. Fill in the missing sections of the generated README.md which are marked with 'TODO:'.
 
-7. Verify the eval runs successfully with a smoke test:
+7. Create a changelog fragment to document your changes by running `uv run scriv create`.
 
-   ```bash
-   uv run inspect eval <eval_name>/task_name --limit 0
-   ```
-
-8. Review the overall package structure:
-   - `src/<eval_name>/` contains the eval implementation
-   - `tests/<eval_name>/` contains the tests
-   - `eval.yaml` is present and complete
-   - `README.md` is present and complete (no remaining TODOs)
-   - All linting and tests pass
+<!-- Reference-style links -->
+[automated-checks]: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/EVALUATION_CHECKLIST.md#automated-checks
+[evalyaml-reference]: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/CONTRIBUTING.md#evalyaml-reference
+[pyproject]: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/pyproject.toml
+[testing-standards]: https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/CONTRIBUTING.md#testing-standards

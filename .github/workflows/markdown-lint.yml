@@ -1,8 +1,11 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 name: Markdown Lint
 
 on:
   pull_request:
+    branches:
+      - main
+      - "release/**"
+  push:
     branches:
       - main
 
@@ -10,9 +13,19 @@ jobs:
   markdownlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up pre-commit
-        uses: pre-commit/action@v3.0.1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          extra_args: markdownlint-fix --all-files
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install pre-commit
+        run: uv tool install pre-commit
+
+      - name: Run markdownlint
+        run: uv tool run pre-commit run markdownlint-fix --all-files

@@ -1,5 +1,3 @@
-<!-- MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md -->
-
 # Evaluation Checklist
 
 This checklist covers all the requirements you should need in order to produce a high-quality evaluation. It's designed for full evaluations, and it's too heavyweight for most PRs.
@@ -25,12 +23,15 @@ We recommend the use of agent workflows. Our agent workflows are optimised for u
 ### Human Ordering
 
 - [ ] Ensure the evaluation runs with 'uv run inspect eval inspect_evals/<eval_name> --limit 1' on the model of your choice. (You can use more samples, but we recommend 5 or less at this early stage)
-- [ ] Analyse the log with the [Trajectory Analysis Workflow](skill: `/check-trajectories-workflow`). Fix it if it fails for spurious reasons. Verify that the evaluation didn't crash and that the agent under evaluation is able to submit a valid result, even if that submission receives a 0 score.
+- [ ] Analyse the log with the [Trajectory Analysis Workflow](skill: `/check-trajectories-workflow`). Fix it if it fails for spurious reasons. Verify that the evaluation didn’t crash and that the agent under evaluation is able to submit a valid result, even if that submission receives a 0 score.
 - [ ] Run the [Master Checklist Workflow](AGENTS.md#master-checklist) which goes over several agent workflows in turn.
 - [ ] Go over the [Manually Examined Checks](#manually-examined-checks) section, and verify your evaluation meets each one.
 - [ ] Check your implementation and results against the original paper or implementation, if one exists.
-- [ ] Manually review your code, making sure it's high-quality. All code must be reviewed, including LLM-generated code as per our [LLM usage guidelines](CONTRIBUTING.md#agentllm-usage). You are welcome to open a draft PR at this stage and review it with this interface. This step must be followed before marking it as "Ready for review".
+- [ ] Manually review your code, making sure it’s high-quality. All code must be reviewed, including LLM-generated code as per our [LLM usage guidelines](CONTRIBUTING.md#agentllm-usage). You are welcome to open a draft PR at this stage and review it with this interface. This step must be followed before marking it as "Ready for review".
 - [ ] Draft your PR, and name it something like `<eval_name> implementation` (putting the name of the evaluation first makes it easier to find your PR in a browser tab!). Push it to Github.
+- [ ] Address any issues found by the pipeline or the automatic Claude Code review. We don't mandate that all automatically flagged issues be resolved. Addressing an issue means to either fix it or to comment on why it doesn't require a fix.
+
+At this point a human maintainer will go over the code within a few days, and possibly suggest fixes. After the maintainer is satisfied with the code's quality and correctness, we'll merge your new evaluation into Inspect Evals!
 
 ### Agent Ordering
 
@@ -40,7 +41,7 @@ You should assume you have a user in the loop unless you are specifically told o
 - [ ] Analyse the log with the Trajectory Analysis Workflow (skill: `/check-trajectories-workflow`). Fix it if it fails for spurious reasons. As an agent, you are permitted to run this command yourself since it is on a small sample size, even though the workflow usually tells you to get the human to run it. Verify that the evaluation didn't crash and that the agent under evaluation is able to submit a valid result, even if that submission receives a 0 score.
 - [ ] Go over the [Manually Examined Checks](#manually-examined-checks) section, and verify your evaluation meets each one.
 - [ ] Check your implementation and results against the original paper or implementation, if one exists.
-- [ ] Manually review the code, making sure it's high-quality. Use relevant skills such as ensure-test-coverage.
+- [ ] Manually review the code, making sure it’s high-quality. Use relevant skills such as ensure-test-coverage.
 - [ ] Run the [Master Checklist Workflow](AGENTS.md#master-checklist) which goes over several agent workflows in turn. The evaluation report usually requires human approval, which is why it is as late in the process as possible. If you are in a fully autonomous workflow, run the command yourself. If the user didn't give you a budget, keep it to under $5 USD per model.
 - [ ] Draft your PR, and name it something like `<eval_name> implementation` (putting the name of the evaluation first makes it easier to find your PR in a browser tab!). Push it to Github, and you're ready for review!
 
@@ -66,6 +67,7 @@ These checks assess whether the evaluation measures what it claims to measure. W
 - [ ] The scorer measures actual task completion rather than a proxy for it
 - [ ] Substring matching is only used when the matched text is itself the ground truth (e.g., CTF flags, computed values), not for assessing natural language properties like compliance or refusal
 - [ ] A model cannot achieve a high score without genuinely completing the task
+- [ ] For open-ended natural language answers, exact string match is a weak proxy — synonyms, reordering, abbreviations, and more complete correct answers all score 0. If exact match is used, either filter out answers that are practically unreproducible verbatim (e.g., long multi-word phrases) or add an opt-in model-graded scorer as an alternative. Document this limitation explicitly.
 
 ## Manually Examined Checks
 
@@ -138,6 +140,7 @@ The following items can be checked by an LLM agent with access to the codebase. 
 - [ ] Ensure deterministic behavior where possible
 - [ ] Datasets are pinned to specific versions: all HuggingFace loading functions (`hf_dataset`, `load_dataset`, `snapshot_download`, `hf_hub_download`, `sentence_transformer`, `transformers_pipeline`) enforce `revision=` at runtime, and GitHub raw URLs use commit SHAs instead of branch names
 - [ ] Differentiate tasks from dataset splits via parameters
+- [ ] `eval.yaml dataset_samples` reflects the actual number of samples evaluated after all filtering, not the raw dataset size
 
 ### [Best Practices - Scoring and Metrics (Agent)](BEST_PRACTICES.md#scoring-and-metrics)
 
@@ -146,6 +149,7 @@ The following items can be checked by an LLM agent with access to the codebase. 
 ### [Best Practices - Documentation, Environments, and Tooling (Agent)](BEST_PRACTICES.md#documentation-environment-and-tooling)
 
 - [ ] Keep docs and defaults in sync
+- [ ] Sandbox paths are fully resolved using `Path(__file__).parent` — never bare `sandbox="docker"` with a custom compose file or Dockerfile
 - [ ] Least-privilege tooling
 - [ ] Keep dependency metadata and lockfiles in sync
 
@@ -167,6 +171,26 @@ To check: search the evaluation's source files for comments like `adapted from`,
 - [ ] Full model names are mentioned explicitly (e.g, gpt-5.1-2025-11-13, not gpt-5.1)
 - [ ] Evaluation version is mentioned explicitly
 - [ ] Any inspect eval parameters used are justified within the report
+
+### [Infrastructure Changes (Agent)](CONTRIBUTING.md#contributing)
+
+This check applies to **all PRs**, not just eval submissions. If the PR modifies any of the following high-impact files, verify that the relevant documentation was updated:
+
+High-impact files — changes here often require a docs update:
+
+- `src/inspect_evals/metadata.py` — changes to the `eval.yaml` schema (new/removed/required fields) should be reflected in the `eval.yaml` Reference section of `CONTRIBUTING.md`
+- `pyproject.toml` — new required dependencies or changed tooling should be documented
+- `.claude/skills/` — new or updated agent workflows should be reflected in `AGENTS.md`
+- `tools/` or `Makefile` — changed contributor tooling should be documented
+- `.github/workflows/` — changes to CI that affect contributors (new required checks, changed test environments) should be documented
+
+To check:
+
+1. Run `git diff --name-only $(git merge-base HEAD origin/main)` to see what files changed in this PR.
+2. If any high-impact files are in the diff, check whether `CONTRIBUTING.md`, `EVALUATION_CHECKLIST.md`, or `AGENTS.md` were also updated.
+3. If not, flag it.
+
+- [ ] If the PR changes how future evaluations must be written or submitted, the relevant documentation (`CONTRIBUTING.md`, `EVALUATION_CHECKLIST.md`, `AGENTS.md`) has been updated accordingly
 
 ## This checklist is a living document
 

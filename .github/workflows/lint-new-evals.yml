@@ -1,14 +1,14 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
-name: Lint Evaluation
+name: Lint Evaluations
 
 on:
   pull_request:
     branches:
       - main
+      - "release/**"
 
 jobs:
-  lint-eval:
-    name: Lint evaluation
+  lint-all-evals:
+    name: Lint all evals
     runs-on: ubuntu-latest
     env:
       UV_PYTHON: "3.12"
@@ -34,7 +34,9 @@ jobs:
             ${{ runner.os }}-uv-
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: |
+          uv sync --frozen --group test_py312_or_higher --extra test
 
-      - name: Check for POSIX-specific code
-        run: uv run python tools/check_posix_code.py src/**/*.py
+      - name: Lint all evaluations
+        run: |
+          uv run python tools/run_autolint.py --all-evals

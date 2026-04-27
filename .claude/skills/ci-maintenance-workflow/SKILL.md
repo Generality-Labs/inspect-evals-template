@@ -1,12 +1,11 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: ci-maintenance-workflow
-description: CI maintenance workflows — fix a failing test, fix a failing smoke test, add @pytest.mark.slow markers to slow tests, or review a PR against agent-checkable standards. Use when user asks to fix a failing test, fix a smoke test, mark slow tests, or review a PR. Trigger when the user asks you to run the "Write a PR For A Failing Test", "Fix A Failing Smoke Test", "Mark Slow Tests", or "Review PR According to Agent-Checkable Standards" workflow.
+description: CI and GitHub Actions maintenance workflows — fix a failing test from a CI URL, fix a failing smoke test, add @pytest.mark.slow markers to slow tests, or review a PR against agent-checkable standards. Use when user asks to fix a failing test, fix a smoke test, mark slow tests, or review a PR. Trigger when the user asks you to run the "Write a PR For A Failing Test", "Fix A Failing Smoke Test", "Mark Slow Tests", or "Review PR According to Agent-Checkable Standards" workflow.
 ---
 
 # CI Maintenance Workflows
 
-This skill covers four CI-related workflows:
+This skill covers four CI/GitHub Actions-related workflows:
 
 - **Fix A Failing Test**: Diagnose and fix a failing test from a CI run
 - **Fix A Failing Smoke Test**: Diagnose and fix a failing smoke test (eval that fails with `--limit 0`)
@@ -19,14 +18,14 @@ This skill covers four CI-related workflows:
 
 This workflow is for fixing failing **pytest tests** (not smoke tests — see "Fix A Failing Smoke Test" below for those).
 
-1. The user should provide you with a link to a CI run or a test to fix. If they haven't, please ask them for the URL of the failing CI run, or a test that should be fixed.
+1. The user should provide you with a link that looks like `https://github.com/ArcadiaImpact/inspect-evals-actions/actions/runs/<number>/job/<number2>`, or a test to fix. If they haven't, please ask them for the URL of the failing Github action, or a test that should be fixed.
 2. If a link is provided, you will be unable to view this link directly, but you can use 'gh run view' to see it.
 3. Checkout main and do a git pull. Make sure you're starting from a clean slate and not pulling in any changes from whatever you or the user was previously doing.
-4. Create a branch `agent/<number>` for your changes.
-5. Identify the failing test(s) and any other problems. Verify the test currently fails in this environment by running it with `uv run pytest tests/<eval_name> --runslow`.
-6. Attempt these fixes one by one and verify they work locally, with `uv run pytest tests/<eval_name> --runslow`.
+4. Create a branch `agent/<number>` for your changes, in inspect_evals. Note this is not the same as inspect-evals-actions where the above URL was from.
+5. Identify the failing test(s) and any other problems. Verify the test currently fails in this environment by running it with `uv run pytest tests/<eval> --runslow`.
+6. Attempt these fixes one by one and verify they work locally, with `uv run pytest tests/<eval> --runslow`.
 7. If your fix changes datasets, expected values, scoring logic, or anything that affects evaluation results, read TASK_VERSIONING.md and PACKAGE_VERSIONING.md, and make all appropriate changes.
-8. Perform linting as seen in .github/workflows/checks.yml, and fix any problems that arise.
+8. Perform linting as seen in .github/workflows/build.yml, and fix any problems that arise.
 9. Commit your changes to the branch.
 10. Before pushing, go over your changes and make sure all the changes that you have are high quality and that they are relevant to your finished solution. Remove any code that was used only for diagnosing the problem.
 11. Push your changes.
@@ -44,12 +43,12 @@ This workflow is for fixing evals that fail their **smoke test** (running with `
 2. If a link is provided, you will be unable to view this link directly, but you can use 'gh run view' to see it.
 3. Checkout main and do a git pull. Make sure you're starting from a clean slate.
 4. Create a branch for your changes.
-5. **Read the eval source code.** Find and read the source for the failing eval under `src/<eval_name>/`.
-6. **Check the eval's commit history.** Run `git log --oneline -20 -- src/<eval_name>/` to understand recent changes. This can reveal whether the eval was recently modified in ways that are relevant to the failure — for example, a parameter that was recently added or removed.
+5. **Read the eval source code.** Find and read the source for the failing eval under `src/inspect_evals/`.
+6. **Check the eval's commit history.** Run `git log --oneline -20 -- src/inspect_evals/<eval_name>/` to understand recent changes. This can reveal whether the eval was recently modified in ways that are relevant to the failure — for example, a parameter that was recently added or removed.
 7. **Reproduce the failure.** Run the eval with:
 
    ```bash
-   uv run inspect eval <eval_name>/task_name --limit 0
+   uv run python tools/run_evals.py --pred <eval_name> --fail-fast
    ```
 
    Read the full error output carefully. Note the exact error message and traceback.
@@ -68,7 +67,7 @@ This workflow is for fixing evals that fail their **smoke test** (running with `
 2. **Verify the fix.** Run the eval again:
 
     ```bash
-    uv run inspect eval <eval_name>/task_name --limit 0
+    uv run python tools/run_evals.py --pred <eval_name> --fail-fast
     ```
 
     The eval must complete without errors. If you cannot run the eval (e.g. disk space, credentials, network), note this explicitly — do not claim verification you did not perform.
@@ -102,17 +101,36 @@ This workflow adds `@pytest.mark.slow(seconds)` markers to tests that exceed the
 
 ### Workflow Steps
 
-1. **Get the CI run URL**: The user should provide a URL to the CI run. If they haven't, please ask them for the URL of the failing CI run.
+1. **Get the GitHub Actions URL**: The user should provide a URL like `https://github.com/ArcadiaImpact/inspect-evals-actions/actions/runs/<run_id>` or `https://github.com/ArcadiaImpact/inspect-evals-actions/actions/runs/<run_id>/job/<job_id>`. If they haven't, please ask them for the URL of the failing Github action.
 
-2. **Extract slow test information**: Identify tests that exceeded the threshold from the CI logs.
+2. **Extract slow test information**: Use the fetch_slow_tests.py script to get all slow tests and their recommended markers:
+
+   ```bash
+   uv run python agent_artefacts/scripts/fetch_slow_tests.py <url_or_run_id> --threshold 10
+   ```
+
+   This script:
+   - Fetches logs from all jobs in the GitHub Actions run
+   - Parses test timing information from the "Check for unmarked slow tests" step
+   - Aggregates durations across all Python versions and platforms
+   - Reports the maximum duration observed for each test
+   - Provides recommended `@pytest.mark.slow(N)` marker values (ceiling of max duration)
+
+   For JSON output (useful for programmatic processing):
+
+   ```bash
+   uv run python agent_artefacts/scripts/fetch_slow_tests.py <url_or_run_id> --threshold 10 --json
+   ```
+
+   Tests marked `[FAIL]` in the output exceeded 60 seconds and caused the CI to fail. All tests above the threshold (default 10s) should be marked.
 
 3. **Check existing markers**: For each identified test, check if it already has a `@pytest.mark.slow` marker:
 
    ```bash
-   grep -E "def <test_name>|@pytest\.mark\.slow" tests/<eval_name>/<path>
+   grep -E "def <test_name>|@pytest\.mark\.slow" tests/<path>
    ```
 
-   If the test already has a slow marker with a value >= the observed duration, skip it.
+   If the test already has a slow marker with a value >= the observed duration, skip it (per user instruction: "If the number is there but too high, leave it as is").
 
 4. **Add slow markers**: For tests without markers, add `@pytest.mark.slow(N)` where N is the observed maximum duration rounded up to the nearest integer. Place the marker immediately before other decorators like `@pytest.mark.huggingface` or `@pytest.mark.asyncio`.
 
@@ -153,6 +171,8 @@ This workflow adds `@pytest.mark.slow(seconds)` markers to tests that exceed the
 - The slow marker value should be slightly higher than the observed maximum to account for CI variance. Rounding up to the nearest integer is usually sufficient.
 - Parametrized tests (e.g., `test_foo[param1]`) share a single marker on the base test function. You should use the highest value found across all params for the slow marker.
 
+TODO: What if one param is an order of magnitude higher than the rest? Should we recommend splitting it into its own test? pytest.mark.slow contents aren't that crucial, but still.
+
 ---
 
 ## Review PR According to Agent-Checkable Standards
@@ -167,11 +187,13 @@ This workflow is designed to run in CI (GitHub Actions) to automatically review 
 
 ### Workflow Steps
 
-1. **Identify if an evaluation was modified**: Look at the changed files in the PR to determine which evaluation(s) are affected. Use `git diff` commands to see what has changed. If an evaluation (found in src/<eval_name>) was modified, complete all steps in the workflow. If no evaluation was modified, skip any steps that say (Evaluation) in them.
+1. **Identify if an evaluation was modified**: Look at the changed files in the PR to determine which evaluation(s) are affected. Use `git diff` commands to see what has changed. If an evaluation (found in src/inspect_evals) was modified, complete all steps in the workflow. If no evaluation was modified, skip any steps that say (Evaluation) in them.
 
-2. **(Evaluation) Read the standards**: Read EVALUATION_CHECKLIST.md, focusing on the [Agent Runnable Checks](EVALUATION_CHECKLIST.md#agent-runnable-checks) section. These are the standards you will check against.
+2. **Read the repo context**: Read agent_artefacts/repo_context/REPO_CONTEXT.md if present. Use these lessons in your analysis.
 
-3. **(Evaluation) Check each standard**: For each evaluation modified in the PR, go through every item in the Agent Runnable Checks section:
+3. **(Evaluation) Read the standards**: Read EVALUATION_CHECKLIST.md, focusing on the [Agent Runnable Checks](EVALUATION_CHECKLIST.md#agent-runnable-checks) section. These are the standards you will check against.
+
+4. **(Evaluation) Check each standard**: For each evaluation modified in the PR, go through every item in the Agent Runnable Checks section:
    - Read the relevant files in the evaluation
    - Compare against the standard
    - For any violations found, add an entry to `/tmp/NOTES.md` with:
@@ -182,11 +204,13 @@ This workflow is designed to run in CI (GitHub Actions) to automatically review 
 
    Only worry about violations that exist within the code that was actually changed. Pre-existing violations that were not touched or worsened by this PR can be safely ignored.
 
-4. **Examine test coverage**: Use the ensure-test-coverage skill and appropriate commands to identify any meaningful gaps in test coverage. You can skip this step if a previous step showed no tests were found, since this issue will already be pointed out.
+5. **Examine test coverage**: Use the ensure-test-coverage skill and appropriate commands to identify any meaningful gaps in test coverage. You can skip this step if a previous step showed no tests were found, since this issue will already be pointed out.
 
-5. **Apply code quality analysis**: Examine all files changed for quality according to BEST_PRACTICES.md. Perform similar analysis and note-taking as in Step 4. If you notice poor quality in a way that is not mentioned in BEST_PRACTICES.md, add this to your notes, and under **Standard**, write "No explicit standard - agent's opinion". Err on the side of including issues here - we will be updating these documents over time, and it is easier for us to notice something too nitpicky than to notice the absence of something important.
+6. **Apply code quality analysis**: Examine all files changed for quality according to BEST_PRACTICES.md. Perform similar analysis and note-taking as in Step 5. If you notice poor quality in a way that is not mentioned in BEST_PRACTICES.md, add this to your notes, and under **Standard**, write "No explicit standard - agent's opinion". Err on the side of including issues here, unless REPO_CONTEXT.md or another document tells you not to - we will be updating these documents over time, and it is easier for us to notice something too nitpicky than to notice the absence of something important.
 
-6. **Write the summary**: After checking all standards, create `/tmp/SUMMARY.md` by consolidating the issues from NOTES.md:
+7. **Check infrastructure standards**: Also apply the [Infrastructure Changes (Agent)](EVALUATION_CHECKLIST.md#infrastructure-changes-agent) check from EVALUATION_CHECKLIST.md — this applies to all PRs, not just eval submissions. It's a quick check: if high-impact files changed, did the relevant docs follow?
+
+8. **Write the summary**: After checking all standards, create `/tmp/SUMMARY.md` by consolidating the issues from NOTES.md:
 
    ```markdown
    ## Summary
@@ -210,7 +234,7 @@ This workflow is designed to run in CI (GitHub Actions) to automatically review 
 
    If no issues are found, write a brief summary confirming the PR passes all agent-checkable standards. Do NOT include a list of passed checks - it is assumed that anything not mentioned is fine.
 
-7. **Important**: Always write to `/tmp/SUMMARY.md` even if there are no issues. The CI workflow depends on this file existing.
+9. **Important**: Always write to `/tmp/SUMMARY.md` even if there are no issues. The CI workflow depends on this file existing.
 
 End your comment with 'This is an automatic review performed by Claude Code. Any issues raised here should be fixed or justified, but a human review is still required in order for the PR to be merged.'
 

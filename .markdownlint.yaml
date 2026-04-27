@@ -3,7 +3,6 @@
 
 default: true
 
-
 ol-prefix:
   style: one_or_ordered
 

@@ -1,4 +1,3 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: eval-report-workflow
 description: Create an evaluation report for a README by selecting models, estimating costs, running evaluations, and formatting results tables. Use when user asks to make/create/generate an evaluation report. Trigger when the user asks you to run the "Make An Evaluation Report" workflow.
@@ -45,8 +44,8 @@ See `references/frontier-models.md` for the current list of frontier models and 
     g. Create a NOTES.md file for miscellaneous helpful notes. Err on the side of taking lots of notes. Create an UNCERTAINTIES.md file to note any uncertainties.
 2. Read the [Evaluation Report Guidelines](CONTRIBUTING.md#evaluation-report-guidelines).
 3. Check to see if the README for the evaluation already has an evaluation report. If so, double-check with the user that they want it overwritten.
-4. Read the main file in EVAL_NAME, which should be src/<eval_name>/<eval_name>.py in order to see how many tasks there are.
-5. Perform an initial test with 'uv run inspect eval <eval_name>/<task_name> --model gpt-5.1-2025-11-13 --limit 5' to get estimated token counts. Use -T shuffle=True if possible to produce random samples - to see if it's possible, you'll need to check the evaluation itself.
+4. Read the main file in EVAL_NAME, which should be src/inspect_evals/EVAL_NAME/EVAL_NAME.py in order to see how many tasks there are.
+5. Perform an initial test with 'uv run inspect eval inspect_evals/EVAL_NAME --model gpt-5.1-2025-11-13 --limit 5' to get estimated token counts. Use -T shuffle=True if possible to produce random samples - to see if it's possible, you'll need to check the evaluation itself.
 6. Perform model selection as above to decide which models to run.
 7. Select a method of randomisation of the samples that ensures all meaningfully different subsets of the data are checked. This is as simple as ensuring the dataset is shuffled in most cases. Explicitly track how many meaningfully different subsets exist.
 8. Tell the user what commands to run and how much compute it is expected to cost.
@@ -59,7 +58,7 @@ See `references/frontier-models.md` for the current list of frontier models and 
 
     The command to perform this run is as follows:
 
-    `uv run inspect eval <eval_name>/<task_name> --model model1,model2,model3 --limit <limit> --max-tasks <num_tasks> --epochs <epochs>`**
+    `uv run inspect eval inspect_evals/<eval_name> --model model1,model2,model3 --limit <limit> --max-tasks <num_tasks> --epochs <epochs>`**
 
     After you have run the command, let me know and I'll fill out the evaluation report from there.**
 

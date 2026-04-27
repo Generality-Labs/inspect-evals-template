@@ -1,9 +1,10 @@
-<!-- MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md -->
-
 # AGENTS.md
 
 ## Repo-Wide Tips
 
+- Before making code changes, read `agent_artefacts/repo_context/REPO_CONTEXT.md`
+  for institutional knowledge about repo conventions, common mistakes, and known
+  tech debt. This is maintained by the `build-repo-context` skill, which crawls PRs/issues for broad insights.
 - When creating pull requests, always use the `--draft` flag and read
   `.github/PULL_REQUEST_TEMPLATE.md` and use its structure as the PR body. Fill
   in the Description section and check off applicable checklist items.
@@ -81,7 +82,7 @@ This workflow runs a series of workflows each in turn. Each workflow is to be ru
   - whether this is better handled as a new skill or an update to an existing one
 - Prefer improving an existing skill over creating a new one when there is substantial overlap.
 - Do not suggest a new skill for one-off work, highly personal preferences, or tasks that are too small to justify maintenance overhead.
-- If the session surfaced a durable repo convention, reviewer expectation, or repeated failure mode, consider whether it should also be captured in AGENTS.md, but ask the user before making that change.
+- If the session surfaced a durable repo convention, reviewer expectation, or repeated failure mode, consider whether it should also be captured in REPO_CONTEXT.md or AGENTS.md, but ask the user before making that change.
 
 ### PR Guidelines
 
@@ -89,12 +90,23 @@ This workflow runs a series of workflows each in turn. Each workflow is to be ru
 - When creating a new PR for the user, you should make the PR as a draft. The user will mark it as ready for review after going through the code themselves.
 - Always work on a branch, and never attempt to push directly to main.
 
+TODO: Figure out a reliable way to have the agent monitor the pipeline in the background and ensure it passes without errors. gh watch isn't the best.
+
+### Asset Maintenance
+
+`ASSETS.yaml` and `internal/audits/asset-actions.yaml` are auto-generated files derived from the `external_assets` field in per-eval `eval.yaml` files.
+
+After any PR that touches an `eval.yaml` `external_assets` field (e.g. pinning a floating ref, adding a new asset), refresh both files:
+
+1. Regenerate the manifest: `uv run python tools/generate_asset_manifest.py`
+2. Regenerate the action plan: run `/generate-asset-actions`
+
 ### Useful Commands
 
 1. You can see our linting in the `.github/workflows/build.yml` file. You should run these commands when checking linting, including both ruff and `tools/run_autolint.py`.
-2. To run tests, run `uv run pytest tests/<your_eval>`.
-3. To run evaluations, run `uv run inspect eval <your_eval>/<task_name>`.
-4. To run a specific task (i.e, a function with the @task decorator), run `uv run inspect eval <your_eval>/<task_name>@task_name`.
+2. To run tests, run `uv run pytest tests/eval_name`.
+3. To run evaluations, run `uv run inspect eval inspect_evals/eval_name`.
+4. To run a specific task (i.e, a function with the @task decorator), run `uv run inspect eval inspect_evals/eval_name@task_name`.
 5. Some useful arguments are:
     a. `--limit X`: Run only up to X samples.
     b. `--model model_name`: Run on this particular model. Multiple models can be run with commas like model1,model2. You can find information on model names [here](https://inspect.aisi.org.uk/models.html). If the user lacks an API key for OpenAI, Anthropic, or Google, note this down in your report. You should assume the user has these keys until Inspect throws an error.

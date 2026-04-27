@@ -1,4 +1,3 @@
-# MANAGED FILE - Do not edit. Updates pulled from template. See MANAGED_FILES.md
 ---
 name: investigate-dataset
 description: Investigate datasets from HuggingFace, CSV, or JSON files to understand their structure, fields, and data quality. Trigger whenever you need to explore or inspect a dataset yourself without using pre-written scripts.
@@ -95,6 +94,6 @@ uv run python -c "from datasets import load_dataset; print(load_dataset('org/nam
 For cache locations (HuggingFace native, Inspect AI, Inspect Evals), force re-download commands, and test utilities, see `references/inspect-dataset-patterns.md`.
 
 - **Gated dataset**: Run `huggingface-cli login` or set `HF_TOKEN`
-- **Rate limited**: The `hf_dataset` wrapper has built-in retry with backoff
+- **Rate limited**: The `hf_dataset` wrapper in `inspect_evals.utils.huggingface` has built-in retry with backoff
 - **Large dataset**: Use `streaming=True` or `split="train[:1000]"` for sampling
 - **Missing revision**: Check the dataset's "Files and versions" tab on HuggingFace
