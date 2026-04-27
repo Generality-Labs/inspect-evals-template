@@ -95,6 +95,6 @@ uv run python -c "from datasets import load_dataset; print(load_dataset('org/nam
 HuggingFace caches at `~/.cache/huggingface/datasets/`. To force re-download set `HF_DATASETS_OFFLINE=0` and pass `download_mode="force_redownload"` to `load_dataset`, or simply delete the cache directory.
 
 - **Gated dataset**: Run `huggingface-cli login` or set `HF_TOKEN`
-- **Rate limited**: The `hf_dataset` wrapper in `inspect_evals.utils.huggingface` has built-in retry with backoff
+- **Rate limited**: wait and retry, or set `HF_TOKEN` to authenticate (raises HuggingFace's per-IP rate limit)
 - **Large dataset**: Use `streaming=True` or `split="train[:1000]"` for sampling
 - **Missing revision**: Check the dataset's "Files and versions" tab on HuggingFace
