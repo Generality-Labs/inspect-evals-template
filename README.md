@@ -247,6 +247,7 @@ All toggles live in [`tools/enforcement.config`](tools/enforcement.config) — e
 
 - `ENFORCE_RUFF` — Ruff format + lint
 - `ENFORCE_MYPY` — Mypy static types
+- `ENFORCE_TESTS` — `pytest` against `tests/` (skips `@pytest.mark.slow` by default; use `--runslow` to include)
 - `ENFORCE_POSIX_CHECK` — POSIX-only Python idioms (`tools/check_posix_code.py`)
 - `ENFORCE_UV_LOCK` — `uv.lock` in sync with `pyproject.toml`
 - `ENFORCE_UNLISTED_EVALS` — eval directories must be registered in
