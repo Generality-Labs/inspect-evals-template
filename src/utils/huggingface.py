@@ -59,7 +59,6 @@ def get_dataset_infos_dict(path: str, revision: str | None = None) -> DatasetInf
             path,
             name=None if config == "default" and len(config_names) == 1 else config,
             revision=revision,
-            trust_remote_code=False,
         )
         info = builder.info
         infos["configs"][config] = {

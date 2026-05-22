@@ -1,0 +1,12 @@
+# external_dependencies: false positive. `utils` is the repo's first-party helper
+# package (src/utils, same distribution), used via the documented
+# load_version_from_yaml pattern (see src/examples/gpqa). It is not an external
+# dependency, but the check resolves it to the installed distribution and flags it.
+external_dependencies
+
+# tests_init: inapplicable to this template's layout. Eval packages live at the top
+# level (src/lab_bench_2), so a tests/lab_bench_2/__init__.py makes pytest's prepend
+# importer treat the test directory as the `lab_bench_2` package and shadow the
+# source package, breaking collection. The template's own example evals
+# (tests/examples/*) likewise omit __init__.py.
+tests_init

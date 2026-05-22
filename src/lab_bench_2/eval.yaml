@@ -1,0 +1,17 @@
+title: "LABBench2: An Improved Benchmark for AI Systems Performing Biology Research"
+description: |
+  LABBench2 is a benchmark for AI Systems Performing Biology Research. 
+  It evaluates language models and research agents on life-science tasks spanning 
+  literature reasoning, database access, figures, tables, protocols, source quality, 
+  sequence analysis, cloning, patents, and clinical trials.
+
+arxiv: https://arxiv.org/abs/2604.09554
+group: Reasoning
+contributors:
+  - iphan
+version: "1-A"
+tasks:
+  - name: lab_bench_2
+    dataset_samples: 168
+metadata:
+  requires_internet: true

@@ -10,7 +10,6 @@ fallback_version = "0.0.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["examples*", "utils*"]
 
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
@@ -91,7 +90,7 @@ warn_redundant_casts = true
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = ["examples.*", "utils.*"]
+module = ["examples.*", "utils.*", "lab_bench_2.*"]
 warn_return_any = true
 disallow_untyped_defs = true
 disallow_any_generics = true
@@ -114,9 +113,9 @@ module = ["add_readme_section", "generate_readmes"]
 ignore_missing_imports = true
 
 [project]
-name = "inspect-eval-template"
-description = "Template for Inspect AI evaluations"
-authors = [{ name = "Your Name" }]
+name = "lab-bench"
+description = "Benchmark of biology research tasks"
+authors = [{ name = "Isabelle Phan" }]
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -134,11 +133,10 @@ classifiers = [
 dependencies = [
     "inspect_ai>=0.3.158",
     "pyyaml>=5.1.0",
-    # USER: Add your eval's dependencies here
+    "datasets>=4.8.5",
 ]
 
 [project.urls]
-# USER: Update these URLs
 "Source Code" = "https://github.com/your-org/your-eval"
 "Issue Tracker" = "https://github.com/your-org/your-eval/issues"
 
@@ -151,11 +149,16 @@ dependencies = [
 # should export your @task functions.
 # Note: examples are NOT registered -- only your evaluations under src/.
 [project.entry-points.inspect_ai]
+lab_bench_2 = "lab_bench_2"
+
+[project.optional-dependencies]
+test = []
 
 [dependency-groups]
 dev = [
     "inspect-scout>=0.3.0",  # llm_scanner API used by agent_artefacts/trajectory_analysis/inspect_scout/
     "mypy",
+    "openai>=1.99.7",
     "pre-commit",
     "pytest",
     "pytest-asyncio",
@@ -166,6 +169,9 @@ dev = [
     "toml",
     "types-PyYAML",
 ]
+
+test_py311_or_lower = []
+test_py312_or_higher = []
 
 [tool.check-wheel-contents]
 ignore = ["W005", "W009"]
