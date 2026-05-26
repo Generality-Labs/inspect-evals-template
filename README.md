@@ -32,7 +32,7 @@ This template contains:
    uv sync
 
    # Run an evaluation
-uv run inspect eval src/<eval_name>/<task_file>.py@<task_name>
+   uv run inspect eval src/<eval_name>/<task_file>.py@<task_name>
 
    # Run tests
    uv run pytest -k "not agentic"
