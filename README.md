@@ -58,7 +58,7 @@ This template contains:
    <eval_name> = "<eval_name>"
    ```
 
-5. Run it: `uv run inspect eval <eval_name>/<task_name> --model openai/gpt-5-nano`
+5. Run it: `uv run inspect eval <eval_name>/<task_name> --model openai/gpt-5-nano` # note: the task_name is saved in src/eval_dir/task_file, if the project name != eval_dir  `uv run inspect eval task_name` will work instead
 
 See `src/examples/` for complete working examples, including a real
 benchmark adaptation (GPQA).
