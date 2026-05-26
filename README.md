@@ -32,7 +32,7 @@ This template contains:
    uv sync
 
    # Run an evaluation
-   uv run inspect eval <eval_name>/<task_file>.py@<task_name> --model openai/gpt-4o
+   uv run inspect eval src/<eval_name>/<task_file>.py@<task_name> --model openai/gpt-4o
 
    # Run tests
    uv run pytest
