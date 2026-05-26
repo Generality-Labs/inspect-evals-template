@@ -34,6 +34,9 @@ This template contains:
    # Run an evaluation
    uv run inspect eval src/<eval_name>/<task_file>.py@<task_name> --model openai/gpt-4o
 
+   # Or if the task is registered in the .tomp file under `[project.entry-points.inspect_ai]`
+   uv run inspect eval eval_name
+   
    # Run tests
    uv run pytest
 
