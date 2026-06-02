@@ -10,7 +10,7 @@ fallback_version = "0.0.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["examples*", "utils*"]
+include = ["examples*", "utils*", "mmlu*"]
 
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
@@ -135,6 +135,8 @@ dependencies = [
     "inspect_ai>=0.3.158",
     "pyyaml>=5.1.0",
     # USER: Add your eval's dependencies here
+    "datasets>=4.0.0",
+    "pandas>=2.0.0",
 ]
 
 [project.urls]
