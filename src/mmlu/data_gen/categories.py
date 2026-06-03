@@ -111,3 +111,16 @@ DEFAULT_SUBJECTS: list[str] = [
     for subjects in DEFAULT_SUBJECTS_BY_CATEGORY.values()
     for subject in subjects
 ]
+
+# French names for the default study subjects, so French prompts read naturally.
+# Subjects outside this map fall back to the de-underscored slug at render time.
+FR_SUBJECT_NAMES: dict[str, str] = {
+    "high_school_mathematics": "les mathématiques de niveau lycée",
+    "college_computer_science": "l'informatique de niveau universitaire",
+    "world_religions": "les religions du monde",
+    "philosophy": "la philosophie",
+    "sociology": "la sociologie",
+    "high_school_macroeconomics": "la macroéconomie de niveau lycée",
+    "marketing": "le marketing",
+    "nutrition": "la nutrition",
+}

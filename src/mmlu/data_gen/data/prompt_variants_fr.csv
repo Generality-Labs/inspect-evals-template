@@ -1,0 +1,26 @@
+variant_id,prompt
+V_1,"Les questions suivantes sont des questions à choix multiples (avec réponses) sur {subject}.
+
+{question}
+{choices}
+Réponse :"
+V_2,"Répondez à la question à choix multiples suivante sur {subject}. Indiquez uniquement la lettre (A, B, C ou D) de la bonne réponse.
+
+{question}
+{choices}
+Réponse :"
+V_3,"Voici une question sur {subject}. Choisissez la meilleure réponse et répondez en donnant seulement sa lettre.
+
+{question}
+{choices}
+Réponse :"
+V_4,"Vous passez un examen sur {subject}. Lisez la question et les quatre options ci-dessous, puis donnez uniquement la lettre (A à D) de la bonne réponse.
+
+{question}
+{choices}
+Réponse :"
+V_5,"Considérez la question suivante sur {subject}. Laquelle des quatre options est correcte ? N'indiquez que la lettre correspondante.
+
+{question}
+{choices}
+Réponse :"

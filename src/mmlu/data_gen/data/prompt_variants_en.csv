@@ -1,0 +1,26 @@
+variant_id,prompt
+V_1,"The following are multiple choice questions (with answers) about {subject}.
+
+{question}
+{choices}
+Answer:"
+V_2,"Answer the following multiple-choice question about {subject}. Reply with only the letter (A, B, C, or D) of the correct option.
+
+{question}
+{choices}
+Answer:"
+V_3,"Here is a question on {subject}. Choose the single best answer and respond with just its letter.
+
+{question}
+{choices}
+Answer:"
+V_4,"You are taking an exam on {subject}. Read the question and the four options below, then give only the letter (A-D) of the correct answer.
+
+{question}
+{choices}
+Answer:"
+V_5,"Consider the {subject} question below. Which of the four options is correct? Output only the corresponding letter.
+
+{question}
+{choices}
+Answer:"
