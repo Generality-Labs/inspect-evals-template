@@ -35,6 +35,12 @@ from examples.gpqa import gpqa_diamond
 eval(gpqa_diamond)
 ```
 
+If your directory name doesn't match your package name but you have registered your eval task, you can also run:
+
+```bash
+uv run inspect eval gpqa_diamond --model openai/gpt-5-nano
+```
+
 After running evaluations, view logs with:
 
 ```bash
