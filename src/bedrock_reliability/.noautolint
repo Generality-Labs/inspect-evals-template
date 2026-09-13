@@ -1,0 +1,10 @@
+# playwright is a sandbox-only dependency, pip-installed in the Dockerfile
+# (see control_server.py's docstring). It's never imported on the host, so
+# it doesn't belong in pyproject.toml's dependencies.
+external_dependencies
+
+# tests/bedrock_reliability/__init__.py would make that directory a package
+# named "bedrock_reliability" too, colliding with src/bedrock_reliability's
+# own module name under mypy's default (non-namespace) package resolution --
+# an enforced check `make check` would then fail to satisfy this advisory one.
+tests_init

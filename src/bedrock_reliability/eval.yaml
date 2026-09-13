@@ -1,0 +1,16 @@
+title: "Bedrock Reliability: Silent Failure in Browser Agents"
+description: |
+  Ports bedrock's browser-agent reliability study to Inspect: a
+  perceive-plan-act loop agent is scored not on whether it claims success,
+  but on whether the page agrees. Reports pass, honest-failure, and
+  silent-failure rates across four tasks served from a pinned sandbox.
+group: Agents
+contributors:
+  - KrishanKVerma
+version: "1-A"
+tags: ["Agent", "Reliability"]
+tasks:
+  - name: bedrock_reliability
+    dataset_samples: 4
+metadata:
+  sandbox: ["solver"]

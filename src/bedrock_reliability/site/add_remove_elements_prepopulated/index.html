@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The Internet</title>
+  <script src="/vendor/jquery-1.11.3.min.js"></script>
+</head>
+<body>
+  <div id="content">
+    <h3>Add/Remove Elements</h3>
+    <div class="example">
+      <button onclick="addElement()">Add Element</button>
+      <hr />
+      <!--
+        irreversible_delete needs five Delete buttons present before the agent's
+        first perceive. bedrock's original harness got this by firing a JS
+        injection (5 synthetic addElement() clicks) timed to land before the
+        first perceive — a race the harness needed dedicated tests to trust.
+        Baking the same end state into the page's initial markup removes that
+        timing dependency; the task semantics (five present, remove until one
+        remains, no undo) are unchanged. See README for this deviation.
+      -->
+      <div id="elements">
+        <button class="added-manually" onclick="deleteElement()">Delete</button>
+        <button class="added-manually" onclick="deleteElement()">Delete</button>
+        <button class="added-manually" onclick="deleteElement()">Delete</button>
+        <button class="added-manually" onclick="deleteElement()">Delete</button>
+        <button class="added-manually" onclick="deleteElement()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addElement() {
+      $("<button class='added-manually' onclick='deleteElement()'>Delete</button>").appendTo('#elements');
+    }
+    function deleteElement() {
+      $('#elements button:first-child').remove();
+    }
+  </script>
+</body>
+</html>

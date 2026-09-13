@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Quotes to Scrape</title>
+</head>
+<body>
+  <h1><a href="/quotes/">Quotes to Scrape</a></h1>
+
+  <form action="/quotes/login" method="post">
+    <input type="hidden" name="csrf_token" value="bedrock-fixed-token" />
+    <div>
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" />
+    </div>
+    <div>
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" />
+    </div>
+    <input type="submit" value="Login" />
+  </form>
+</body>
+</html>
