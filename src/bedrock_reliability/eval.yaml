@@ -4,13 +4,15 @@ description: |
   perceive-plan-act loop agent is scored not on whether it claims success,
   but on whether the page agrees. Reports pass, honest-failure, and
   silent-failure rates across four tasks served from a pinned sandbox.
+arxiv: https://forum.effectivealtruism.org/posts/i3kxEqozoQftdeJtS/can-we-catch-a-misleading-ai-agent-where-reasoning
 group: Agents
 contributors:
   - KrishanKVerma
 version: "1-A"
-tags: ["Agent", "Reliability"]
+tags: ["Agent"]
 tasks:
   - name: bedrock_reliability
     dataset_samples: 4
 metadata:
   sandbox: ["solver"]
+external_assets: []

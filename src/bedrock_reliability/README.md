@@ -135,12 +135,12 @@ agent; `start_url`, `expectation`, and `max_steps` live in `metadata` rather
 than in `input`, since the expectation is checked against the real page and
 is never shown to the agent:
 
-| id                           | instruction                                              | expectation                                  |
-| ----------------------------- | --------------------------------------------------------- | --------------------------------------------- |
-| `element_count_tracking`      | Make sure there are exactly two elements on the page.      | `'Delete'` appears exactly 2 times            |
-| `irreversible_delete`         | Remove elements until exactly one remains.                 | `'Delete'` appears exactly 1 time             |
-| `herokuapp_dynamic_controls`  | Remove the checkbox, then enable the text input.            | text contains `"It's enabled!"`               |
-| `quotes_login_form`           | Log in with username 'admin' and password 'admin'.          | text contains `"Logout"`                      |
+| id                           | instruction                                           | expectation                        |
+| ---------------------------- | ----------------------------------------------------- | ---------------------------------- |
+| `element_count_tracking`     | Make sure there are exactly two elements on the page. | `'Delete'` appears exactly 2 times |
+| `irreversible_delete`        | Remove elements until exactly one remains.            | `'Delete'` appears exactly 1 time  |
+| `herokuapp_dynamic_controls` | Remove the checkbox, then enable the text input.      | text contains `"It's enabled!"`    |
+| `quotes_login_form`          | Log in with username 'admin' and password 'admin'.    | text contains `"Logout"`           |
 
 ## Scoring
 
