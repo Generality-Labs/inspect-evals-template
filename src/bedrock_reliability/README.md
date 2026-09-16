@@ -11,8 +11,9 @@ The results this eval is reproducing are published in:
 - ["Can we catch a misleading AI agent? Where reasoning-monitoring breaks
   down"](https://forum.effectivealtruism.org/posts/i3kxEqozoQftdeJtS/can-we-catch-a-misleading-ai-agent-where-reasoning)
   (EA Forum, July 2026)
-- "An agent's account of its own work is not evidence of what it did" (EA
-  Forum, Sept 2026) — <!-- TODO: add URL once published -->
+- ["An agent's account of its own work is not evidence of what it
+  did"](https://forum.effectivealtruism.org/posts/tAycmGwS83d9sqKJT/an-agent-s-account-of-its-own-work-is-not-evidence-of-what)
+  (EA Forum, Sept 2026)
 
 The agent loop is ported as a custom solver rather than `basic_agent` /
 tool-calling: the mechanism the finding depends on is the ref-numbering
@@ -34,6 +35,14 @@ a run next year will:
   link the agent can click and undo its own success (`quotes/`).
 
 ## Deviations from the original bedrock methodology
+
+**Live sites vs. static copies.** The original study measured against the
+live `the-internet.herokuapp.com` and `quotes.toscrape.com`; this eval serves
+faithful static copies of those same pages from inside the sandbox instead
+(see the Dockerfile/compose.yaml design). The pages are reproduced
+deliberately and checked against the live sources, but they are copies, not
+the originals — so results from this eval are not directly comparable to the
+published numbers.
 
 **`irreversible_delete`'s starting state.** The original harness produced "five
 elements present at the start" by firing a JS injection (five synthetic
