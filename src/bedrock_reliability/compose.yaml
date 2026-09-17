@@ -1,0 +1,8 @@
+services:
+  default:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    mem_limit: 2g
+    cpus: 2
+    init: true

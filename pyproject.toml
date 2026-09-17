@@ -10,7 +10,7 @@ fallback_version = "0.0.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["examples*", "utils*"]
+include = ["examples*", "utils*", "bedrock_reliability*"]
 
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
@@ -108,6 +108,12 @@ module = ["datasets", "datasets.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# playwright only runs inside the bedrock_reliability sandbox image (see its
+# Dockerfile); it's not a host dependency, so mypy can't resolve it here.
+module = ["playwright", "playwright.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # Test files import these helpers via runtime sys.path manipulation, so
 # mypy can't resolve them statically. Treat them as untyped.
 module = ["add_readme_section", "generate_readmes"]
@@ -151,6 +157,7 @@ dependencies = [
 # should export your @task functions.
 # Note: examples are NOT registered -- only your evaluations under src/.
 [project.entry-points.inspect_ai]
+bedrock_reliability = "bedrock_reliability"
 
 [dependency-groups]
 dev = [
