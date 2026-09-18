@@ -192,7 +192,7 @@ automatically.
 ### Standard checks (always active)
 
 - **Checks** (`checks.yml`) — runs ruff, mypy, POSIX code check,
-  unlisted-eval check, package build, autolint, generated-docs check,
+  unlisted-eval check, package build, inspect-evals-lint, generated-docs check,
   and large-file scan on every push and PR. Each check is individually
   enforceable — see [Checks and enforcement](#checks-and-enforcement).
 - **Markdown Lint** (`markdown-lint.yml`) — lints markdown files on PRs
@@ -313,7 +313,7 @@ All toggles live in [`tools/enforcement.config`](tools/enforcement.config) — e
 **Default-advisory** (reported but non-blocking unless `ENFORCE_<NAME>=true`):
 
 - `ENFORCE_AUTOLINT` — inspect_evals structural standards (eval.yaml schema,
-  README sections, test patterns, etc.) via `tools/run_autolint.py`
+  README sections, test patterns, etc.) via `inspect-evals-lint`
 - `ENFORCE_GENERATED_DOCS` — auto-generated README sections committed
 - `ENFORCE_MARKDOWN_LINT` — markdown style (`.markdownlint.yaml`)
 - `ENFORCE_LARGE_FILES` — no files >10MB
@@ -341,7 +341,7 @@ into a default-advisory check, set its variable to `true`.
   (synced from `inspect_evals`).
 - [EVALUATION_CHECKLIST.md](EVALUATION_CHECKLIST.md) — quality checklist used
   when reviewing evaluations (synced from `inspect_evals`).
-- [AUTOMATED_CHECKS.md](AUTOMATED_CHECKS.md) — what `tools/run_autolint.py`
+- [AUTOMATED_CHECKS.md](AUTOMATED_CHECKS.md) — what `inspect-evals-lint`
   checks, and how to suppress individual rules.
 - [TASK_VERSIONING.md](TASK_VERSIONING.md) — when to bump an eval's `task`
   version.

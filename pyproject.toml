@@ -15,6 +15,13 @@ include = ["examples*", "utils*"]
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
 
+# Evaluation checks (see AUTOMATED_CHECKS.md). The template preset expects one
+# package per evaluation directly under src/, registered under
+# [project.entry-points.inspect_ai]; src/utils is linted as a helper package
+# and src/examples is not linted.
+[tool.inspect-evals-lint]
+preset = "template"
+
 [tool.ruff]
 extend-exclude = [
     "agent_artefacts",
@@ -154,6 +161,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "inspect-evals-lint==0.2.1",  # Evaluation checks; see AUTOMATED_CHECKS.md
     "inspect-scout>=0.3.0",  # llm_scanner API used by agent_artefacts/trajectory_analysis/inspect_scout/
     "mypy",
     "pre-commit",

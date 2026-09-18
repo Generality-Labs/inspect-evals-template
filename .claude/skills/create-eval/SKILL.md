@@ -461,7 +461,7 @@ Fix any failures. For tests requiring Docker or datasets, note which tests need 
 ### 6.1 Run Autolint
 
 ```bash
-uv run python tools/run_autolint.py <eval_name>
+uv run inspect-evals-lint <eval_name>
 ```
 
 The autolint surfaces the registry's recommended structural standards. In

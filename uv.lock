@@ -859,6 +859,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "inspect-evals-lint" },
     { name = "inspect-scout" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -880,6 +881,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "inspect-evals-lint", specifier = "==0.2.1" },
     { name = "inspect-scout", specifier = ">=0.3.0" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -891,6 +893,19 @@ dev = [
     { name = "ruff", specifier = "==0.13.2" },
     { name = "toml" },
     { name = "types-pyyaml" },
+]
+
+[[package]]
+name = "inspect-evals-lint"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/30/d3/dac9de96475f2c5c2c6782ea1619396935a44df11af48fd7a1d8765e7044/inspect_evals_lint-0.2.1.tar.gz", hash = "sha256:28d8fb8d1893470f1d609e74f97eff91c91ffd025704ccd55955222e41859fed", size = 92244, upload-time = "2026-09-18T03:25:31.361Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/47/6095713c5dd67511d58a4e50c8f98d59450986e67bef567442cf1aa98be6/inspect_evals_lint-0.2.1-py3-none-any.whl", hash = "sha256:4bfa099d4b67d19ce4b2b5c41760a24db531e46323af8b36f916e10328601d38", size = 42224, upload-time = "2026-09-18T03:25:29.952Z" },
 ]
 
 [[package]]

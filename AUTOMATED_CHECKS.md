@@ -7,20 +7,23 @@
 > are **recommended, not required** — autolint is advisory by default. See
 > [Checks and enforcement](README.md#checks-and-enforcement) to opt in.
 
-We have a number of automatic checks that can be run using [tools/run_autolint.py](tools/run_autolint.py):
+The automated checks are provided by the [inspect-evals-lint](https://github.com/Generality-Labs/inspect-evals-lint) package. It is installed through the `dev` dependency group and configured under `[tool.inspect-evals-lint]` in `pyproject.toml` (the `template` layout preset). Run it with:
 
 ```bash
-uv run python tools/run_autolint.py <eval_name>
+uv run inspect-evals-lint <eval_name>
+uv run inspect-evals-lint --all-evals
 ```
+
+Evaluations live directly under `src/`, one package each, registered under `[project.entry-points.inspect_ai]`. `src/utils` is linted as a helper package: it runs the checks about code behaviour (private imports, score values, model roles, dependencies, tests for custom components) and not the ones about an evaluation's structure. `src/examples` is not linted. The package version is pinned in `pyproject.toml` and `uv.lock`; check implementations and their unit tests are maintained in the package repository.
 
 To suppress a check, use:
 
 - Line-level: `# noautolint: <check_name>`
 - File-level: `# noautolint-file: <check_name>` (at top of file)
 - Directory-level: Add check name to `src/<eval_name>/<subdir>/.noautolint`
-- Eval-level: Add check name to `src/<eval_name>/.noautolint`
+- Eval-level: Add check name to `src/<eval_name>/.noautolint` (this works for `utils` too)
 
-You don't need to read these checks - they are presented here as a reference in case of linting errors.
+You don't need to read these checks - they are presented here as a reference in case of linting errors. The canonical descriptions, including the reasoning behind each check, are in the package's [CHECKS.md](https://github.com/Generality-Labs/inspect-evals-lint/blob/main/docs/CHECKS.md).
 
 ## File Structure (Automated)
 
@@ -35,7 +38,8 @@ You don't need to read these checks - they are presented here as a reference in 
 
 - No imports from private inspect_ai modules (those starting with `_`) (`private_api_imports`)
 - Score() calls use CORRECT/INCORRECT constants instead of literal strings (`score_constants`)
-- External eval-specific dependencies declared in `pyproject.toml` (`external_dependencies`)
+- `Score.unscored()` calls pass a `reason=`, and the former `metadata["unscored_reason"]` key does not appear (`unscored_reason`)
+- External eval-specific dependencies declared in `pyproject.toml` (`external_dependencies`). For `src/utils`, imports at module level must be in `[project].dependencies`, because every evaluation that imports the helper loads them; imports inside a function only need declaring in some optional group.
 
 ## Tests (Automated)
 
@@ -50,6 +54,8 @@ You don't need to read these checks - they are presented here as a reference in 
 ## Best Practices (Automated)
 
 - `get_model()` only called inside @solver/@scorer decorated functions (`get_model_location`)
+- Model roles supply a model, a `default=`, or `required=True` to prevent an unbound role from falling back to the model under evaluation (`model_role_resolution`)
 - Sample() calls include an `id=` parameter for stable IDs (`sample_ids`)
 - @task functions provide defaults for overridable parameters (solver, scorer, etc.) (`task_overridable_defaults`)
+- Sandbox images pulled from a registry in compose files use an immutable tag or `@sha256` digest (`sandbox_image_pinning`). Untagged and `:latest` references fail; services built locally via `build:` and references interpolated from environment variables are skipped. Exceptions go under `[tool.inspect-evals-lint.sandbox-image-allowlist]` in `pyproject.toml`.
 - Dataset pinning is enforced at runtime: `hf_dataset()`, `load_dataset()`, `snapshot_download()`, and `hf_hub_download()` wrappers require a `revision=` keyword argument

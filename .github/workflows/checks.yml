@@ -120,7 +120,7 @@ jobs:
       - uses: hynek/build-and-inspect-python-package@v2
 
   autolint:
-    name: Autolint (inspect_evals standards)
+    name: Autolint (inspect-evals-lint)
     runs-on: ubuntu-latest
     needs: config
     # Default: advisory. Set ENFORCE_AUTOLINT=true in tools/enforcement.config
@@ -134,8 +134,8 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: uv sync --frozen
-      - name: Run autolint
-        run: uv run python tools/run_autolint.py --all-evals
+      - name: Run inspect-evals-lint
+        run: uv run inspect-evals-lint --all-evals
 
   generated-docs:
     name: Generated READMEs up to date

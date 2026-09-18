@@ -282,7 +282,7 @@ RUN_DATASET_DOWNLOAD_TESTS=1
 
 #### CI workflows
 
-- The template ships `.github/workflows/checks.yml` which runs ruff, mypy, the POSIX-code check, the unlisted-evals check, the package build, autolint, and a few advisory checks. By default this does not run pytest — the template assumes you run tests locally during development. If you want CI to run your tests, add a job to `checks.yml` (or a separate workflow) that calls `make test`.
+- The template ships `.github/workflows/checks.yml` which runs ruff, mypy, the POSIX-code check, the unlisted-evals check, the package build, `inspect-evals-lint`, and a few advisory checks. By default this does not run pytest — the template assumes you run tests locally during development. If you want CI to run your tests, add a job to `checks.yml` (or a separate workflow) that calls `make test`.
 - The upstream `inspect_evals` registry has additional CI (a `build.yml` that runs the test suite with `RUN_SLOW_TESTS=no`, plus a nightly heavy-tests workflow that detects unmarked slow/docker tests). If your fork wants the same coverage, those workflows are good references but they aren't shipped here.
 
 ### Manual testing

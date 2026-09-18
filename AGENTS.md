@@ -90,7 +90,7 @@ This workflow runs a series of workflows each in turn. Each workflow is to be ru
 
 ### Useful Commands
 
-1. You can see our linting in the `.github/workflows/checks.yml` file. Run `make check` (which delegates to `tools/run_checks.sh`) when checking linting locally — it runs ruff, mypy, autolint, and the rest in one go and reports advisory vs enforced failures.
+1. You can see our linting in the `.github/workflows/checks.yml` file. Run `make check` (which delegates to `tools/run_checks.sh`) when checking linting locally — it runs ruff, mypy, `inspect-evals-lint`, and the rest in one go and reports advisory vs enforced failures.
 2. To run tests, run `uv run pytest tests/<eval_name>`.
 3. To run evaluations, run `uv run inspect eval <eval_name>/<task_name>` (the eval name comes from the entry-point registered in `pyproject.toml`).
 4. To run a specific task (i.e, a function with the @task decorator), run `uv run inspect eval <eval_name>/<task_name>`.

@@ -65,18 +65,6 @@ This means that you can add or remove files to this section as needed.
 - `tools/generate_readmes.py`
 - `tools/inject_managed_prefix.sh`
 - `tools/list_large_files.sh`
-- `tools/run_autolint.py`
-- `tools/run_autolint/__init__.py`
-- `tools/run_autolint/checks/__init__.py`
-- `tools/run_autolint/checks/best_practices.py`
-- `tools/run_autolint/checks/code_quality.py`
-- `tools/run_autolint/checks/dependencies.py`
-- `tools/run_autolint/checks/file_structure.py`
-- `tools/run_autolint/checks/tests.py`
-- `tools/run_autolint/checks/utils.py`
-- `tools/run_autolint/models.py`
-- `tools/run_autolint/output.py`
-- `tools/run_autolint/suppressions.py`
 - `tools/run_checks.sh`
 - `tools/sync_merge_file.sh`
 
@@ -90,7 +78,7 @@ These are yours — the sync mechanism will never modify them:
 - `tests/<your_eval>/` — your tests
 - `tests/conftest.py` — pytest fixtures and markers; the upstream version depends on `inspect_evals` package internals and is not synced
 - `README.md` — your evaluation's documentation
-- `pyproject.toml` — your project configuration (tool configs are managed, but `[project]` and `[project.entry-points]` sections are yours)
+- `pyproject.toml` — your project configuration (tool configs are managed, but `[project]` and `[project.entry-points]` sections are yours). Keep the `inspect-evals-lint` entry in the `dev` dependency group and the `[tool.inspect-evals-lint]` table: `checks.yml` and `tools/run_checks.sh` run `uv run inspect-evals-lint`, which needs the package installed. Repositories created before template v1.2.0 add both by hand.
 - `agent_artefacts/` — runtime artefacts from agent workflows
 - `LICENSE` — your chosen license. By default, the MIT license will be copied over, but this can be altered by you at any time.
 
