@@ -13,7 +13,7 @@ permissions:
 jobs:
   check-activity:
     runs-on: ubuntu-latest
-    if: github.repository != 'ArcadiaImpact/inspect-evals-template'
+    if: github.repository != 'Generality-Labs/inspect-evals-template'
     outputs:
       is_active: ${{ steps.activity.outputs.is_active }}
     steps:
@@ -54,7 +54,7 @@ jobs:
 
       - name: Add template remote
         run: |
-          git remote add template https://github.com/ArcadiaImpact/inspect-evals-template.git 2>/dev/null || true
+          git remote add template https://github.com/Generality-Labs/inspect-evals-template.git 2>/dev/null || true
           git fetch template main
 
       - name: Extract managed files list
@@ -154,7 +154,7 @@ jobs:
 
           # Build PR body
           body="## Template Sync"
-          body="$body\n\nThis PR updates managed files from the [inspect-eval-template](https://github.com/ArcadiaImpact/inspect-eval-template)."
+          body="$body\n\nThis PR updates managed files from the [inspect-evals-template](https://github.com/Generality-Labs/inspect-evals-template)."
           body="$body\n\n**Template version:** $template_version"
 
           if [ -n "$conflicts" ]; then
