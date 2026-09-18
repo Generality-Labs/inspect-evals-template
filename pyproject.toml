@@ -113,6 +113,14 @@ ignore_missing_imports = true
 module = ["add_readme_section", "generate_readmes"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# transformers / sentence_transformers are lazy-imported inside the
+# utils.huggingface wrappers. They aren't a runtime requirement of the
+# template, only of evals that opt to use them, so let mypy treat them
+# as untyped rather than requiring the stub to be installed everywhere.
+module = ["transformers", "transformers.*", "sentence_transformers", "sentence_transformers.*"]
+ignore_missing_imports = true
+
 [project]
 name = "inspect-eval-template"
 description = "Template for Inspect AI evaluations"
@@ -134,6 +142,13 @@ classifiers = [
 dependencies = [
     "inspect_ai>=0.3.158",
     "pyyaml>=5.1.0",
+    # Powers src/utils/huggingface.py (retry-aware HF wrappers). If your
+    # eval doesn't touch HuggingFace and you want a leaner environment,
+    # remove these here and delete the wrapper section in
+    # src/utils/huggingface.py.
+    "backoff>=2.0",
+    "datasets>=2.14",
+    "huggingface_hub>=0.20",
     # USER: Add your eval's dependencies here
 ]
 
@@ -165,6 +180,7 @@ dev = [
     "ruff==0.13.2",
     "toml",
     "types-PyYAML",
+    "types-requests",
 ]
 
 [tool.check-wheel-contents]

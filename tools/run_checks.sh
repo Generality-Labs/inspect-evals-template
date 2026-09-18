@@ -71,6 +71,7 @@ run_check() {
 run_check RUFF              "Ruff format"      uv run ruff format --check
 run_check RUFF              "Ruff lint"        uv run ruff check
 run_check MYPY              "Mypy"             uv run mypy src tests
+run_check TESTS             "Pytest"           uv run pytest -q
 run_check UV_LOCK           "uv lock check"    bash -c '
     before=$(sha256sum uv.lock 2>/dev/null | cut -d" " -f1)
     uv lock >/dev/null 2>&1

@@ -309,7 +309,7 @@ Implement in dependency order: dataset -> prompts -> scorer -> solver -> @task.
 
 ### 4.1 Dataset Loading
 
-- Use `hf_dataset()` from `inspect_ai.dataset` for HuggingFace datasets
+- Use `hf_dataset()` from `utils.huggingface` for HuggingFace datasets — it wraps `inspect_ai.dataset.hf_dataset` with retry-on-rate-limit/transient-error and requires a `revision=` for reproducibility
 - Write a `record_to_sample` function that maps raw records to `Sample` objects
 - Include all useful fields in `sample.metadata` for debugging
 - Use stable, canonical IDs for `sample.id`

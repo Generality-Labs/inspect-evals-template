@@ -246,11 +246,11 @@ def check_external_dependencies(
         # Resolve import name to package name (e.g., PIL → pillow)
         package_name = import_to_package.get(imp, imp).lower()
         if imp_lower not in stdlib_modules and package_name not in core_deps:
-            # Skip imports from inspect_evals itself
-            if imp != "inspect_evals":
-                # Skip local modules
-                if imp not in local_modules and imp_lower not in local_modules:
-                    external_imports.add(imp)
+            # Local imports are filtered below. (Upstream additionally
+            # hard-coded a `inspect_evals` self-import skip here — dropped in
+            # template context since the package name is contributor-chosen.)
+            if imp not in local_modules and imp_lower not in local_modules:
+                external_imports.add(imp)
 
     if not external_imports:
         report.add(
