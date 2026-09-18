@@ -248,6 +248,12 @@ def build_usage_section(eval_info: EvalInfo) -> list[str]:
         eval({first_task})
         ```
 
+        If your directory name doesn't match your package name but you have registered your eval task, you can also run:
+
+        ```bash
+        uv run inspect eval {first_task} --model openai/gpt-5-nano
+        ```
+
         After running evaluations, view logs with:
 
         ```bash
