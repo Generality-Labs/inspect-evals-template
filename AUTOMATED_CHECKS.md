@@ -11,23 +11,26 @@ The automated checks are provided by the [inspect-evals-lint](https://github.com
 
 ```bash
 uv run inspect-evals-lint <eval_name>
-uv run inspect-evals-lint --all-evals
+uv run inspect-evals-lint --all               # every evaluation and src/utils
+uv run inspect-evals-lint --all --select IEBP # one category, or one rule by code or name
+uv run inspect-evals-lint --explain IEBP002   # a rule's documentation
 ```
+
+Every check is a *rule* with a code (`IEFS` file structure, `IECQ` code quality, `IETS` tests, `IEBP` best practices, then a number) and a name; either works in `--select`, `--ignore` and suppression comments. A rule reports one finding per site with a file and line, so CI annotates pull requests at the offending lines.
 
 Evaluations live directly under `src/`, one package each, registered under `[project.entry-points.inspect_ai]`. `src/utils` is linted as a helper package: it runs the checks about code behaviour (private imports, score values, model roles, dependencies, tests for custom components) and not the ones about an evaluation's structure. `src/examples` is not linted. The package version is pinned in `pyproject.toml` and `uv.lock`; check implementations and their unit tests are maintained in the package repository.
 
-To suppress a check, use:
+To suppress a finding:
 
-- Line-level: `# noautolint: <check_name>`
-- File-level: `# noautolint-file: <check_name>` (at top of file)
-- Directory-level: Add check name to `src/<eval_name>/<subdir>/.noautolint`
-- Eval-level: Add check name to `src/<eval_name>/.noautolint` (this works for `utils` too)
+- Line-level: `# inspect-evals-lint: ignore[<rule>]` on the offending line (or any line of a multi-line statement), with a rule name or code, several comma-separated. A bare `ignore` is a configuration error.
+- File-level: `# inspect-evals-lint: ignore-file[<rule>]` within the first ten lines of the file.
+- Directory or package: `per-file-ignores = { "src/<eval_name>/<subdir>/**" = ["<rule>"] }` under `[tool.inspect-evals-lint]` in `pyproject.toml`; `exclude` lists globs the code rules never read at all, for code shipped into a sandbox.
 
-You don't need to read these checks - they are presented here as a reference in case of linting errors. The canonical descriptions, including the reasoning behind each check, are in the package's [CHECKS.md](https://github.com/Generality-Labs/inspect-evals-lint/blob/main/docs/CHECKS.md).
+You don't need to read these checks - they are presented here as a reference in case of linting errors. The canonical description of each rule, with the reasoning behind it, is its page at [inspect-evals-lint.generality.org](https://inspect-evals-lint.generality.org/CHECKS/); `--explain <rule>` prints the same text.
 
 ## File Structure (Automated)
 
-- The evaluation is located in a sub-directory of `src/` (`eval_location`)
+- The evaluation is located in a sub-directory of `src/` (`package_location`)
 - `__init__.py` exports task and related functions (`init_exports`)
 - @task functions are contained within `src/<eval_name>/<eval_name>.py` (`main_file`)
 - Task registered in `pyproject.toml` under `[project.entry-points.inspect_ai]` (`registry`)
@@ -57,5 +60,7 @@ You don't need to read these checks - they are presented here as a reference in 
 - Model roles supply a model, a `default=`, or `required=True` to prevent an unbound role from falling back to the model under evaluation (`model_role_resolution`)
 - Sample() calls include an `id=` parameter for stable IDs (`sample_ids`)
 - @task functions provide defaults for overridable parameters (solver, scorer, etc.) (`task_overridable_defaults`)
-- Sandbox images pulled from a registry in compose files use an immutable tag or `@sha256` digest (`sandbox_image_pinning`). Untagged and `:latest` references fail; services built locally via `build:` and references interpolated from environment variables are skipped. Exceptions go under `[tool.inspect-evals-lint.sandbox-image-allowlist]` in `pyproject.toml`.
+- Sandbox images pulled from a registry in compose files use an immutable tag or `@sha256` digest (`sandbox_image_pinning`). Untagged and `:latest` references fail; services built locally via `build:` and references interpolated from environment variables are skipped. Exceptions go under `[tool.inspect-evals-lint.allowlists.sandbox_image_pinning]` in `pyproject.toml`.
+- An evaluation whose `eval.yaml` declares `metadata.requires.gpu` ships a `<eval>_sandbox_check` task with `kind: maintenance` that certifies its image on GPU hardware (`gpu_sandbox_check`).
+- Dockerfile builds consume locked inputs (`dockerfile_locking`, warns): dependency installs use a committed `uv.lock` (`uv sync --locked`) or a hashed snapshot (`pip install --require-hashes -r`), `FROM` and `COPY --from` images carry an `@sha256` digest, Git dependencies name a full commit, and nothing is piped from `curl` into a shell. OS package installs cannot be locked and are named in the pass message.
 - Dataset pinning is enforced at runtime: `hf_dataset()`, `load_dataset()`, `snapshot_download()`, and `hf_hub_download()` wrappers require a `revision=` keyword argument

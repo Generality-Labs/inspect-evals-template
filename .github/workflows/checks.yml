@@ -135,7 +135,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Run inspect-evals-lint
-        run: uv run inspect-evals-lint --all-evals
+        run: uv run inspect-evals-lint --all --output-format github
 
   generated-docs:
     name: Generated READMEs up to date

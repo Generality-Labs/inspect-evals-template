@@ -1,5 +1,0 @@
-# utils.huggingface defers `import datasets` to its wrapper functions, so the
-# evaluation that calls them declares the dependency in its own extra. Until an
-# evaluation in this repository declares `datasets`, the linter would report it
-# as undeclared. Remove this line once one does.
-external_dependencies
