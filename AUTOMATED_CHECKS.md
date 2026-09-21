@@ -42,6 +42,7 @@ You don't need to read these checks - they are presented here as a reference in 
 - No imports from private inspect_ai modules (those starting with `_`) (`private_api_imports`)
 - Score() calls use CORRECT/INCORRECT constants instead of literal strings (`score_constants`)
 - `Score.unscored()` calls pass a `reason=`, and the former `metadata["unscored_reason"]` key does not appear (`unscored_reason`)
+- Every suppression marker is one the linter reads (`suppression_syntax`, warns): a `# noautolint` comment or `.noautolint` file, a bare `ignore`, an `ignore-file` past the header or a selector naming no rule suppresses nothing, so it is reported at its line with the replacement in the hint.
 - External eval-specific dependencies declared in `pyproject.toml` (`external_dependencies`). For `src/utils`, imports at module level must be in `[project].dependencies`, because every evaluation that imports the helper loads them; imports inside a function only need declaring in some optional group.
 
 ## Tests (Automated)
