@@ -66,7 +66,7 @@ benchmark adaptation (GPQA).
 ## Structure
 
 Each evaluation lives in its own directory under `src/` and is registered via
-entry points in `pyproject.toml`. Tests go in `tests/<eval_name>/`.
+entry points in `pyproject.toml`. Tests go in `tests/<eval_name>/`, with an `__init__.py`.
 
 ```text
 src/

@@ -48,7 +48,7 @@ You don't need to read these checks - they are presented here as a reference in 
 ## Tests (Automated)
 
 - Test directory exists at tests/<eval_name> (`tests_exist`)
-- Test directory and subdirectories have `__init__.py` (`tests_init`)
+- Test directory and subdirectories have `__init__.py` (`tests_init`). The template ships `tests/__init__.py`, so `tests/<eval_name>/` is imported as `tests.<eval_name>` and cannot shadow the `src/<eval_name>` package under pytest or mypy.
 - At least one E2E test uses `mockllm/model` (`e2e_test`)
 - `record_to_sample` is tested with a real sample (if used) (`record_to_sample_test`)
 - Custom @solver decorated functions have tests (`custom_solver_tests`)

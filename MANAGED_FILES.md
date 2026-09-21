@@ -53,6 +53,7 @@ This means that you can add or remove files to this section as needed.
 - `Makefile`
 - `TASK_VERSIONING.md`
 - `src/examples/`
+- `tests/__init__.py`
 - `tests/examples/`
 - `tests/test_add_readme_section.py`
 - `tests/test_generate_readmes.py`
