@@ -99,7 +99,7 @@ run_check LARGE_FILES       "Large-file scan"  bash -c '
         exit 1
     fi
 '
-run_check AUTOLINT          "Autolint"         uv run python tools/run_autolint.py --all-evals
+run_check AUTOLINT          "Autolint (inspect-evals-lint)" uv run inspect-evals-lint --all
 
 echo "${BOLD}════════════════════ Summary ════════════════════${RESET}"
 echo "Passed:                          ${#PASSED[@]}"

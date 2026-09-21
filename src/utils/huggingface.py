@@ -50,7 +50,13 @@ def get_dataset_infos_dict(path: str, revision: str | None = None) -> DatasetInf
     Returns a dict keyed by config name; each entry contains `splits` (list of
     split names) and `features` (mapping of column name to dtype string).
     """
-    from datasets import get_dataset_config_names, load_dataset_builder
+    # Deferred so only evaluations that call these wrappers need `datasets`; they
+    # declare it in their own extra. Until one does, the linter would report the
+    # import as undeclared. Remove the suppression once an evaluation declares it.
+    from datasets import (  # inspect-evals-lint: ignore[external_dependencies]
+        get_dataset_config_names,
+        load_dataset_builder,
+    )
 
     config_names = get_dataset_config_names(path, revision=revision) or ["default"]
     infos: DatasetInfosDict = {"configs": {}}
