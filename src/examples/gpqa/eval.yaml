@@ -28,4 +28,5 @@ external_assets:
     comment: Downloaded at runtime via csv_dataset
 
 metadata:
-  requires_internet: true
+  requires:
+    internet: true

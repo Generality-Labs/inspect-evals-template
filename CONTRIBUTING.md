@@ -441,7 +441,7 @@ Each evaluation has an `eval.yaml` file in its directory (e.g., `src/<eval_name>
 
 - `metadata`: (Optional) Object containing system/configuration information. All fields are optional. May include:
   - `sandbox`: List of components that use a sandboxed environment. Can include `"solver"` and/or `"scorer"`. Omit if no sandbox is used.
-  - `requires_internet`: Set to `true` only if the evaluation requires internet access. Omit if false.
+  - `requires`: Capabilities the evaluation needs from its environment. `internet: true` if the runner needs outbound network access beyond fetching packages. `gpu: true` if a GPU is needed where the sandbox runs, or a mapping with `count` and an informational `products` list (e.g. `[T4, H100]`) naming the hardware the eval is designed or verified for. Unknown capability keys are rejected. Omit if neither applies.
   - `environment`: Special environment requirements (e.g., `"Kali-Linux"`). Only include if a non-standard environment is needed.
 
   Example:
@@ -449,11 +449,27 @@ Each evaluation has an `eval.yaml` file in its directory (e.g., `src/<eval_name>
   ```yaml
   metadata:
     sandbox: ["solver", "scorer"]  # Both solver and scorer use sandbox
-    requires_internet: true
+    requires:
+      internet: true
+      gpu:
+        count: 1
+        products: [T4]
     environment: "Kali-Linux"  # Only include if special environment is needed
   ```
 
   Omit the entire metadata field if none of its subfields are needed.
+
+- `kind` (per task): Set `kind: maintenance` on a task whose scores describe the evaluation harness rather than the model, such as a judge meta-evaluation or a sandbox image check. The default, `benchmark`, is what listings and evaluation reports assume; maintenance tasks are still registered and runnable but are listed separately in generated documentation.
+
+  ```yaml
+  tasks:
+    - name: my_bench
+      dataset_samples: 500
+    - name: my_bench_judge_check
+      dataset_samples: 200
+      kind: maintenance
+      comment: Scores the judge against human labels; not a model result.
+  ```
 
 - `human_baseline`: Optional field for evaluations with known human performance metrics
 
@@ -483,7 +499,9 @@ dependency: "your_evaluation"  # Optional
 tags: ["Agent"]  # Optional
 metadata:  # optional metadata documenting eval information. All fields optional
   sandbox: []  # list of eval aspects that use a sandbox, can include "solver" and/or "scorer"
-  requires_internet: true  # boolean indicating whether the eval requires internet access
+  requires:  # capabilities the eval needs; omit keys that do not apply
+    internet: true  # runner needs outbound network access
+    gpu: false  # or `true`, or {count: 1, products: [T4]}
   environment: "Kali-Linux"  # optional environment information
 external_assets:  # required; use [] if none
   - type: huggingface
