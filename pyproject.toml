@@ -15,12 +15,13 @@ include = ["examples*", "utils*"]
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]
 
-# Evaluation checks (see AUTOMATED_CHECKS.md). The template preset expects one
+# Evaluation checks (see AUTOMATED_CHECKS.md). The multi-eval preset expects one
 # package per evaluation directly under src/, registered under
 # [project.entry-points.inspect_ai]; src/utils is linted as a helper package
-# and src/examples is not linted.
+# and src/examples is not linted. A repository with a single evaluation may
+# switch to preset = "single-eval" (flat tests, README at the repo root).
 [tool.inspect-evals-lint]
-preset = "template"
+preset = "multi-eval"
 
 [tool.ruff]
 extend-exclude = [
@@ -161,7 +162,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "inspect-evals-lint==0.5.0",  # Evaluation checks; see AUTOMATED_CHECKS.md
+    "inspect-evals-lint==0.8.0",  # Evaluation checks; see AUTOMATED_CHECKS.md
     "inspect-scout>=0.3.0",  # llm_scanner API used by agent_artefacts/trajectory_analysis/inspect_scout/
     "mypy",
     "pre-commit",
