@@ -171,7 +171,7 @@ dev = [
     "pytest-dotenv",
     "pytest-mock",
     "rich",
-    "ruff==0.13.2",
+    "ruff==0.15.11",  # match .pre-commit-config.yaml and .github/workflows/checks.yml
     "toml",
     "types-PyYAML",
     "uv==0.12.5",  # match the uv-pre-commit rev; setup-uv installs this version in CI
