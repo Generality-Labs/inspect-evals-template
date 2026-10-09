@@ -10,7 +10,7 @@ fallback_version = "0.0.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["examples*", "utils*"]
+include = ["utils*"]  # USER: add your eval packages, e.g. "my_eval*"
 
 [tool.setuptools.package-data]
 "*" = ["eval.yaml"]

@@ -48,7 +48,8 @@ This template contains:
 3. Rename the module file, `@task` function, and `__init__.py` import to
    match your package (replace `simple_qa` / `examples.simple_qa.simple_qa`
    references with your own names).
-4. In `pyproject.toml`, set the distribution name and add an entry point:
+4. In `pyproject.toml`, set the distribution name, register the entry point,
+   add the package to the wheel, and add it to the strict mypy override:
 
    ```toml
    [project]
@@ -56,9 +57,19 @@ This template contains:
 
    [project.entry-points.inspect_ai]
    <eval_name> = "<eval_name>"
+
+   [tool.setuptools.packages.find]
+   include = ["<eval_name>*", "utils*"]
+
+   [[tool.mypy.overrides]]
+   module = ["<eval_name>.*", "examples.*", "utils.*"]
    ```
 
-5. Run it: `uv run inspect eval <eval_name>/<task_name> --model openai/gpt-5-nano` # note: the task_name is saved in src/eval_dir/task_file, if the project name != eval_dir  `uv run inspect eval task_name` will work instead
+5. Run it, where `<task_name>` is the name of your `@task` function:
+
+   ```bash
+   uv run inspect eval <eval_name>/<task_name> --model openai/gpt-5-nano
+   ```
 
 See `src/examples/` for complete working examples, including a real
 benchmark adaptation (GPQA).
@@ -95,8 +106,10 @@ tests/
    my_eval = "my_eval"
    ```
 
-3. Add the module name to `[tool.setuptools.packages.find]` include list
-4. Add a mypy override for the new module
+3. Add the package to the `[tool.setuptools.packages.find]` `include` list
+   (e.g. `"my_eval*"`), so it ships in the wheel
+4. Add the package to the strict `[[tool.mypy.overrides]]` module list
+   (e.g. `"my_eval.*"`)
 
 ## Examples
 
