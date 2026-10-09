@@ -31,6 +31,7 @@ This means that you can add or remove files to this section as needed.
 - `.claude/skills/investigate-dataset/SKILL.md`
 - `.claude/skills/prepare-submission-workflow/SKILL.md`
 - `.claude/skills/read-eval-logs/SKILL.md`
+- `.gitattributes`
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `.github/actions/claude-setup/action.yaml`
 - `.github/workflows/checks.yml`

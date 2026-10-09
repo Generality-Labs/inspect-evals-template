@@ -2,7 +2,16 @@
 """Tests for the post-sync prefix injector used by sync workflows."""
 
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
+
+# The scripts under test run in bash, and Python text-mode writes give CRLF
+# line endings on Windows.
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="needs bash and LF line endings"
+)
 
 SCRIPT = str(
     Path(__file__).resolve().parent.parent / "tools" / "inject_managed_prefix.sh"

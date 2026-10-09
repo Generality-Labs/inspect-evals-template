@@ -2,7 +2,16 @@
 """Tests for the three-way merge logic used by sync-template.yml."""
 
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
+
+# The scripts under test run in bash, and Python text-mode writes give CRLF
+# line endings on Windows.
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="needs bash and LF line endings"
+)
 
 SCRIPT = str(Path(__file__).resolve().parent.parent / "tools" / "sync_merge_file.sh")
 
