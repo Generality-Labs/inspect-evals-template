@@ -67,6 +67,8 @@ benchmark adaptation (GPQA).
 
 Each evaluation lives in its own directory under `src/` and is registered via
 entry points in `pyproject.toml`. Tests go in `tests/<eval_name>/`, with an `__init__.py`.
+Test a custom metric by running it through the real epoch reducer with
+`tests/utils/metric_epochs.py`.
 
 ```text
 src/
