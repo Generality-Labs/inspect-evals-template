@@ -179,8 +179,3 @@ dev = [
 
 [tool.check-wheel-contents]
 ignore = ["W005", "W009"]
-
-[tool.uv]
-environments = [
-    "python_version >= '3.11'",
-]

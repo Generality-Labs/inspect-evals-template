@@ -71,15 +71,7 @@ run_check() {
 run_check RUFF              "Ruff format"      uv run ruff format --check
 run_check RUFF              "Ruff lint"        uv run ruff check
 run_check MYPY              "Mypy"             uv run mypy src tests
-run_check UV_LOCK           "uv lock check"    bash -c '
-    before=$(sha256sum uv.lock 2>/dev/null | cut -d" " -f1)
-    uv lock >/dev/null 2>&1
-    after=$(sha256sum uv.lock 2>/dev/null | cut -d" " -f1)
-    if [ "$before" != "$after" ]; then
-        echo "uv.lock is out of sync with pyproject.toml; running uv lock would change it."
-        exit 1
-    fi
-'
+run_check UV_LOCK           "uv lock check"    uv lock --check
 run_check POSIX_CHECK       "POSIX code check" bash -c 'uv run python tools/check_posix_code.py $(git ls-files "*.py")'
 run_check UNLISTED_EVALS    "Unlisted evals"   uv run python tools/check_unlisted_evals.py
 run_check GENERATED_DOCS    "Generated READMEs up to date" bash -c '
