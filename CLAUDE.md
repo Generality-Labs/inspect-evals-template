@@ -1,6 +1,6 @@
 # Claude Code Instructions
 
-This is the [inspect-eval-template](https://github.com/ArcadiaImpact/inspect-eval-template), a template for building [Inspect AI](https://inspect.aisi.org.uk/) evaluations as part of the [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals) registry. It supports multiple evaluations in a single repository, with working examples in `src/examples/`.
+This is the [inspect-evals-template](https://github.com/Generality-Labs/inspect-evals-template), a template for building [Inspect AI](https://inspect.aisi.org.uk/) evaluations as part of the [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals) registry. It supports multiple evaluations in a single repository, with working examples in `src/examples/`.
 
 ## Running Commands
 
