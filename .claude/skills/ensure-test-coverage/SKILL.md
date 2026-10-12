@@ -230,7 +230,7 @@ Autolint checks are shallow (function name present in test files). Coverage meas
 **Pytest markers** (commonly missing or wrong):
 
 - `@pytest.mark.dataset_download` if test instantiates a dataset (including E2E tests)
-- `@pytest.mark.huggingface` for HF datasets -- do NOT implement manual `have_hf_token()` checks, the centralized conftest handles it
+- `@pytest.mark.huggingface` for HF datasets -- do NOT implement manual `have_hf_token()` checks, pytest-inspect-evals handles it
 - `@pytest.mark.docker` for sandbox tests (NOT `@pytest.mark.skip`)
 - `@pytest.mark.slow(<seconds>)` with actual observed duration for tests >10s
 
@@ -336,6 +336,6 @@ Show the user a summary:
 - **Don't add task API parameters for testability**: Mock `get_model()` instead. This approach has been explicitly rejected in review (PR #998).
 - **Don't test Inspect framework internals**: Only test the eval's custom logic, not Inspect's built-in behavior.
 - **Don't fabricate dataset examples**: Use real examples from the actual dataset for `record_to_sample` tests. This serves as both a test and documentation.
-- **Don't implement manual HF token checks**: The centralized conftest handles `@pytest.mark.huggingface` skip/retry logic. Do NOT add `have_hf_token()` or `can_access_gated_dataset()` functions (PR #987, #993).
+- **Don't implement manual HF token checks**: pytest-inspect-evals handles `@pytest.mark.huggingface` skip/retry logic. Do NOT add `have_hf_token()` or `can_access_gated_dataset()` functions (PR #987, #993).
 - **Don't guess pytest.mark.slow durations**: Derive from actual CI run data (ceiling of observed max). If you can't measure, add a TODO for the user to fill in after running locally.
 - **Don't run full evaluations for testing**: Only run unit tests. Full evals are slow and unnecessary for coverage checking.

@@ -207,12 +207,13 @@ If your eval has multiple tasks or a task with multiple variants, you should imp
 
 If the test triggers the download of a dataset, mark it with `@pytest.mark.dataset_download`. If it uses HuggingFace, also mark it with `@pytest.mark.huggingface`. If it uses a docker sandbox or otherwise triggers a docker build or pull, mark it with `@pytest.mark.docker`. If any test takes more than ~10 seconds, mark it with `@pytest.mark.slow(<observed_seconds>)` using the duration you saw locally (rounded, e.g. `@pytest.mark.slow(20)`). This allows CI to skip slow tests by default, and run them only when explicitly requested. See [CI workflows](#ci-workflows) below for more details.
 
-Examples:
+`assert_eval_success` from [pytest-inspect-evals](https://github.com/Generality-Labs/pytest-inspect-evals) checks the status, results and an expected metric in one call. Examples:
 
 ```python
 from inspect_ai import eval
 from <eval_name> import your_eval_task  # top-level package, registered via [project.entry-points.inspect_ai]
 from inspect_ai.model import get_model, ModelOutput
+from pytest_inspect_evals.assertions import assert_eval_success
 
 def test_end_to_end_your_eval_with_default_mock_responses():
     """
@@ -227,8 +228,7 @@ def test_end_to_end_your_eval_with_default_mock_responses():
         sample_id="sample_id_1",
         model="mockllm/model",
     )
-    assert log.status == "success"
-    assert "accuracy" in log.results.scores[0].metrics
+    assert_eval_success(log, expected_metric="accuracy")
     # more asserts here
 
 def test_end_to_end_your_eval_with_custom_mock_responses():
@@ -251,14 +251,13 @@ def test_end_to_end_your_eval_with_custom_mock_responses():
             ],
         ),
     )
-    assert log.status == "success"
-    assert "accuracy" in log.results.scores[0].metrics
+    assert_eval_success(log, expected_metric="accuracy")
     assert log.results.scores[0].metrics["accuracy"].value == 1.0  # all correct
 ```
 
 #### Running tests and environment toggles
 
-Pytest is configured to automatically load a local `.env` file via `pytest-dotenv`. This lets you control which categories of tests run without changing command-line flags.
+Pytest is configured to automatically load a local `.env` file via `pytest-dotenv`. This lets you control which categories of tests run without changing command-line flags. The test gates and markers come from [pytest-inspect-evals](https://github.com/Generality-Labs/pytest-inspect-evals), which loads automatically.
 
 Supported environment variables:
 
@@ -266,12 +265,15 @@ Supported environment variables:
   - Enable slow tests (e.g., heavy end-to-end/docker builds) by setting `1`, `true`, `yes`, or `on`.
   - Equivalent CLI: `pytest --runslow` or `pytest -m slow` (to run only slow tests).
   - Note: the parameter you pass to `@pytest.mark.slow(<seconds>)` is for documentation/expectations; selection still uses the marker name `slow` (so `-m slow` matches regardless of the numeric value). For example, `@pytest.mark.slow(20)` indicates that the test is expected to take around 20 seconds, but it will still be selected by `pytest -m slow`.
-- `RUN_DATASET_DOWNLOAD_TESTS` (default: on)
+- `RUN_DATASET_DOWNLOAD_TESTS` (default: on, set by `inspect_evals_dataset_download = true` in `pyproject.toml`)
   - Disable dataset-downloading tests by setting `0`, `false`, `no`, or `off`.
-  - Equivalent CLI: `pytest -m 'not dataset_download'` to skip them, or `pytest --dataset-download` to force-enable.
-- `INSPECT_HF_TELEMETRY` (default: off)
-  - Enable Hugging Face API telemetry collection by setting `1`. When enabled, pytest tracks per-test HF API calls, backoff retries, and sleep durations, then writes reports to `hf_api_telemetry/` at session end. Also flags mismatches between `@pytest.mark.huggingface` markers and actual runtime HF usage.
-  - Intended for CI; not needed for local development.
+  - Equivalent CLI: `pytest -m 'not dataset_download'` to skip them.
+- `RUN_K8S_TESTS` and `RUN_GPU_TESTS` (default: off)
+  - Enable tests marked `k8s` or `gpu`. Equivalent CLI: `pytest --runk8s` or `pytest --rungpu`.
+- `HF_TOKEN`
+  - Tests marked `huggingface` are skipped when it is unset, and retried twice when they fail. A gated-dataset error is reported as a skip.
+
+Tests marked `docker` or `posix_only` are skipped on Windows.
 
 Example `.env` entries to run everything locally:
 

@@ -528,7 +528,7 @@ If the evaluation takes longer than five minutes to run and you can identify wha
 - **Don't use private Inspect AI APIs**: Avoid `inspect_ai.*._internal` modules
 - **Don't store aggregatable values in Score.metadata**: Use Score.value (can be a dict)
 - **Don't upload new dataset copies**: Use official sources
-- **Don't implement manual HF token checks**: The centralized conftest handles `@pytest.mark.huggingface`
+- **Don't implement manual HF token checks**: pytest-inspect-evals handles `@pytest.mark.huggingface`
 - **Don't over-test thin wrappers**: `isinstance(solver, Solver)` is sufficient for `basic_agent` wrappers
 - **Don't add type annotations that are redundant**: Only annotate function signatures
 - **Don't create documentation files unless asked**: The README is created by `generate_readmes.py`
