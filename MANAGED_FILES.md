@@ -60,8 +60,6 @@ This means that you can add or remove files to this section as needed.
 - `tests/test_generate_readmes.py`
 - `tests/test_inject_managed_prefix.py`
 - `tests/test_sync_merge.py`
-- `tests/utils/__init__.py`
-- `tests/utils/metric_epochs.py`
 - `tools/add_readme_section.py`
 - `tools/check_posix_code.py`
 - `tools/check_unlisted_evals.py`
@@ -80,8 +78,8 @@ These are yours — the sync mechanism will never modify them:
 
 - `src/` — your evaluation source code
 - `tests/<your_eval>/` — your tests
-- `tests/utils/` — your own test helpers, alongside the two managed files above: `tests/utils/metric_epochs.py` runs a custom metric through the real epoch reducer (see [Read scores as the epoch reducer leaves them](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/BEST_PRACTICES.md#read-scores-as-the-epoch-reducer-leaves-them))
-- `tests/conftest.py` — pytest fixtures and markers; the upstream version depends on `inspect_evals` package internals and is not synced
+- `tests/utils/` — your own test helpers. Before template v1.5.0 the sync managed `tests/utils/metric_epochs.py`; it now comes from [pytest-inspect-evals](https://github.com/Generality-Labs/pytest-inspect-evals) as `pytest_inspect_evals.metrics`, and the sync leaves any existing copy alone.
+- `tests/conftest.py` — your pytest configuration. Test gates (`--runslow`, `RUN_SLOW_TESTS` and the others), markers and shared fixtures come from pytest-inspect-evals, which loads automatically. Repositories created before template v1.5.0 adopt it by hand: add `pytest-inspect-evals` to the `dev` dependency group, set `inspect_evals_dataset_download = true` under `[tool.pytest.ini_options]`, and delete the `--runslow` option and its skip logic from `tests/conftest.py`. Keeping both stops pytest at startup with `conflicting option string: --runslow`.
 - `README.md` — your evaluation's documentation
 - `pyproject.toml` — your project configuration (tool configs are managed, but `[project]` and `[project.entry-points]` sections are yours). Keep the `inspect-evals-lint` entry in the `dev` dependency group and the `[tool.inspect-evals-lint]` table: `checks.yml` and `tools/run_checks.sh` run `uv run inspect-evals-lint`, which needs the package installed. Repositories created before template v1.2.0 add both by hand. Repositories created before template v1.4.0 delete the `[tool.uv] environments` table if it only repeats `requires-python` (the old default was `["python_version >= '3.11'"]`): uv never records it in `uv.lock`, so the `uv lock --check` in `tools/run_checks.sh` always fails while it is there.
 - `agent_artefacts/` — runtime artefacts from agent workflows
