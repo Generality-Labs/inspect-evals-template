@@ -2,6 +2,7 @@
 
 from inspect_ai import eval
 from inspect_ai.model import ModelOutput, get_model
+from pytest_inspect_evals.assertions import assert_eval_success
 
 from examples.simple_qa.simple_qa import record_to_sample, simple_qa
 
@@ -26,7 +27,7 @@ def test_end_to_end() -> None:
         tasks=simple_qa(),
         model="mockllm/model",
     )
-    assert log.status == "success"
+    assert_eval_success(log)
 
 
 def test_end_to_end_correct() -> None:
@@ -43,7 +44,7 @@ def test_end_to_end_correct() -> None:
         ),
         limit=1,
     )
-    assert log.status == "success"
+    assert_eval_success(log)
 
 
 def test_fewshot() -> None:
@@ -52,4 +53,4 @@ def test_fewshot() -> None:
         model="mockllm/model",
         limit=1,
     )
-    assert log.status == "success"
+    assert_eval_success(log)

@@ -3,6 +3,7 @@
 from inspect_ai import eval
 from inspect_ai.model import ModelOutput, get_model
 from inspect_ai.scorer import CORRECT, INCORRECT
+from pytest_inspect_evals.assertions import assert_eval_success
 
 from examples.llm_judge.llm_judge import llm_judge
 
@@ -12,7 +13,7 @@ def test_end_to_end() -> None:
         tasks=llm_judge(),
         model="mockllm/model",
     )
-    assert log.status == "success"
+    assert_eval_success(log)
 
 
 def test_correct_grading() -> None:
@@ -35,9 +36,7 @@ def test_correct_grading() -> None:
         ),
         limit=1,
     )
-    assert log.status == "success"
-    assert log.results is not None
-    assert len(log.results.scores) > 0
+    assert_eval_success(log)
     assert log.samples is not None
     scores = log.samples[0].scores
     assert scores is not None
@@ -64,7 +63,7 @@ def test_incorrect_grading() -> None:
         ),
         limit=1,
     )
-    assert log.status == "success"
+    assert_eval_success(log)
     assert log.samples is not None
     scores = log.samples[0].scores
     assert scores is not None
