@@ -79,13 +79,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 log_level = "WARNING"
 env_files = [".env"]
-markers = [
-    "dataset_download: tests that download datasets (enabled by default; disable with -m 'not dataset_download' or RUN_DATASET_DOWNLOAD_TESTS=0)",
-    "huggingface: marks tests that depend on downloading a model from Hugging Face",
-    "slow: marks tests that are slow to run; enable with --runslow or RUN_SLOW_TESTS=1",
-    "docker: marks tests that pull or build docker images",
-    "posix_only: marks tests that require POSIX systems (Linux/macOS)",
-]
+# pytest-inspect-evals registers the slow, dataset_download, k8s, gpu,
+# huggingface, docker and posix_only markers. Dataset-download tests run by
+# default here; set RUN_DATASET_DOWNLOAD_TESTS=0 to skip them.
+inspect_evals_dataset_download = true
 
 [tool.mypy]
 exclude = [
@@ -169,6 +166,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "pytest-dotenv",
+    "pytest-inspect-evals==0.1.0",  # Test gates, markers, fixtures and helpers; see CONTRIBUTING.md
     "pytest-mock",
     "rich",
     "ruff==0.15.11",  # match .pre-commit-config.yaml and .github/workflows/checks.yml

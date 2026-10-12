@@ -1,40 +1,13 @@
-"""Shared test configuration and fixtures."""
+"""Shared test configuration and fixtures.
+
+Test gates (--runslow, RUN_SLOW_TESTS and so on), markers and shared fixtures
+come from the pytest-inspect-evals plugin, which loads automatically.
+"""
 
 import logging
-import os
 
 import pytest
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--runslow",
-        action="store_true",
-        default=False,
-        help="Run slow tests",
-    )
-
-
 def pytest_configure(config: pytest.Config) -> None:
     logging.basicConfig(level=logging.INFO)
-
-
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
-    run_slow = config.getoption("--runslow") or os.environ.get(
-        "RUN_SLOW_TESTS", ""
-    ).lower() in ("1", "true", "yes", "on")
-
-    run_dataset_download = os.environ.get(
-        "RUN_DATASET_DOWNLOAD_TESTS", "1"
-    ).lower() not in ("0", "false", "no", "off")
-
-    skip_slow = pytest.mark.skip(reason="Need --runslow or RUN_SLOW_TESTS=1 to run")
-    skip_dataset = pytest.mark.skip(reason="RUN_DATASET_DOWNLOAD_TESTS=0")
-
-    for item in items:
-        if "slow" in item.keywords and not run_slow:
-            item.add_marker(skip_slow)
-        if "dataset_download" in item.keywords and not run_dataset_download:
-            item.add_marker(skip_dataset)
