@@ -1,137 +1,19 @@
 # MANAGED FILE - Updates pulled from template. See MANAGED_FILES.md
-name: Sync Upstream (inspect_evals)
+# Retired in template v1.5.0. This workflow used to copy managed files from
+# inspect_evals into the template. Shared code now arrives as dependencies
+# (inspect-evals-lint, pytest-inspect-evals) instead. The file stays as a
+# no-op so the template sync replaces older copies in derived repositories,
+# which would otherwise keep running the old weekly job. You can delete it.
+name: Sync Upstream (retired)
 
 on:
-  schedule:
-    - cron: '0 9 * * 6'  # Weekly on Saturday at 09:00 UTC (before Monday template sync)
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
-  sync:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.SYNC_PAT }}
-
-      - name: Add upstream remote
-        run: |
-          git remote add upstream https://github.com/UKGovernmentBEIS/inspect_evals.git 2>/dev/null || true
-          git fetch upstream main
-
-      - name: Extract managed files list
-        id: managed
-        run: |
-          managed_files=$(sed -n '/<!-- MANAGED_FILES_START -->/,/<!-- MANAGED_FILES_END -->/p' MANAGED_FILES.md \
-            | grep '^- ' \
-            | sed 's/^- `//;s/`$//' \
-            | tr '\n' ' ')
-          echo "files=$managed_files" >> "$GITHUB_OUTPUT"
-
-      - name: Check for updates
-        id: check
-        run: |
-          has_updates=false
-          for file in ${{ steps.managed.outputs.files }}; do
-            if git cat-file -e "upstream/main:$file" 2>/dev/null; then
-              if ! git diff --quiet HEAD "upstream/main" -- "$file" 2>/dev/null; then
-                echo "Updated: $file"
-                has_updates=true
-              fi
-            fi
-          done
-          echo "has_updates=$has_updates" >> "$GITHUB_OUTPUT"
-
-      - name: Create sync branch and PR
-        if: steps.check.outputs.has_updates == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.SYNC_PAT }}
-        run: |
-          branch_name="upstream-sync/$(date +%Y%m%d)"
-          git checkout -b "$branch_name"
-
-          base_sha=$(cat .upstream-sync-sha 2>/dev/null || echo "")
-
-          merged_clean=""
-          conflicts=""
-          overwritten=""
-
-          for file in ${{ steps.managed.outputs.files }}; do
-            if git cat-file -e "upstream/main:$file" 2>/dev/null; then
-              mkdir -p "$(dirname "$file")"
-
-              git show "upstream/main:$file" > /tmp/sync_theirs
-
-              if [ -n "$base_sha" ] && git cat-file -e "$base_sha:$file" 2>/dev/null && [ -f "$file" ]; then
-                git show "$base_sha:$file" > /tmp/sync_base
-                merge_exit=0
-                bash tools/sync_merge_file.sh /tmp/sync_base "$file" /tmp/sync_theirs /tmp/sync_out || merge_exit=$?
-
-                if [ "$merge_exit" -eq 0 ]; then
-                  cp /tmp/sync_out "$file"
-                  merged_clean="$merged_clean\n- \`$file\`"
-                elif [ "$merge_exit" -eq 1 ]; then
-                  cp /tmp/sync_out "$file"
-                  conflicts="$conflicts\n- \`$file\`"
-                else
-                  cp /tmp/sync_theirs "$file"
-                  overwritten="$overwritten\n- \`$file\`"
-                fi
-              else
-                cp /tmp/sync_theirs "$file"
-                overwritten="$overwritten\n- \`$file\`"
-              fi
-              git add "$file"
-            fi
-          done
-
-          # Re-add the MANAGED FILE prefix to every managed file. The sync logic
-          # above hard-overwrites files when there is no base (first sync, or a
-          # newly-tracked file), which strips the local prefix because upstream
-          # files do not carry it. This injector restores it idempotently.
-          for file in ${{ steps.managed.outputs.files }}; do
-            if [ -f "$file" ]; then
-              bash tools/inject_managed_prefix.sh "$file"
-              git add "$file"
-            fi
-          done
-
-          git rev-parse upstream/main > .upstream-sync-sha
-          git add .upstream-sync-sha
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: sync managed files from inspect_evals"
-          git push origin "$branch_name"
-
-          body="## Upstream Sync"
-          body="$body\n\nThis PR updates managed files from [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals)."
-
-          if [ -n "$conflicts" ]; then
-            body="$body\n\n### ⚠️ Files with merge conflicts (need manual resolution)\n$conflicts"
-          fi
-          if [ -n "$merged_clean" ]; then
-            body="$body\n\n### Files merged (local customizations preserved)\n$merged_clean"
-          fi
-          if [ -n "$overwritten" ]; then
-            body="$body\n\n### Files overwritten (no previous sync baseline)\n$overwritten"
-          fi
-
-          body="$body\n\nManaged files are listed in [MANAGED_FILES.md](MANAGED_FILES.md). Only files that exist in inspect_evals are synced."
-
-          gh pr create \
-            --repo "$GITHUB_REPOSITORY" \
-            --head "$branch_name" \
-            --base main \
-            --title "chore: sync managed files from inspect_evals" \
-            --body "$(echo -e "$body")"
+      - name: Explain
+        run: echo "The inspect_evals upstream sync was retired in template v1.5.0. Delete this workflow file."

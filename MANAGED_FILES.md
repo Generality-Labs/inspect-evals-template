@@ -43,7 +43,6 @@ This means that you can add or remove files to this section as needed.
 - `.markdownlint.yaml`
 - `.pre-commit-config.yaml`
 - `.template-sync-sha`
-- `.upstream-sync-sha`
 - `.template-version`
 - `AGENTS.md`
 - `AUTOMATED_CHECKS.md`
