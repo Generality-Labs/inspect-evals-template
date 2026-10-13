@@ -4,6 +4,7 @@ import pytest
 from inspect_ai import eval
 from inspect_ai.dataset import Sample
 from inspect_ai.model import ModelOutput, get_model
+from pytest_inspect_evals.assertions import assert_eval_success, assert_task_structure
 
 from examples.gpqa import (
     DEFAULT_EPOCHS,
@@ -75,9 +76,7 @@ def test_gpqa_diamond_task_structure() -> None:
     """Test that the gpqa_diamond task has the expected structure."""
     task = gpqa_diamond()
 
-    assert task.dataset is not None
-    assert task.solver is not None
-    assert task.scorer is not None
+    assert_task_structure(task)
     assert task.epochs == DEFAULT_EPOCHS
 
 
@@ -103,9 +102,7 @@ def test_gpqa_diamond_end_to_end_with_mock() -> None:
         epochs=1,
     )
 
-    assert log.status == "success"
-    assert log.results is not None
-    assert "accuracy" in log.results.scores[0].metrics
+    assert_eval_success(log, expected_metric="accuracy")
 
 
 @pytest.mark.dataset_download
@@ -126,9 +123,7 @@ def test_gpqa_diamond_correct_answer() -> None:
         epochs=1,
     )
 
-    assert log.status == "success"
-    assert log.results is not None
-    assert "accuracy" in log.results.scores[0].metrics
+    assert_eval_success(log, expected_metric="accuracy")
 
 
 @pytest.mark.dataset_download

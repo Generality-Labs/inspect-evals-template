@@ -3,6 +3,7 @@
 import pytest
 from inspect_ai import eval
 from inspect_ai.model import ModelOutput, get_model
+from pytest_inspect_evals.assertions import assert_eval_success
 
 from examples.agentic.agentic import agentic_eval
 
@@ -15,7 +16,7 @@ def test_end_to_end() -> None:
         model="mockllm/model",
         limit=1,
     )
-    assert log.status == "success"
+    assert_eval_success(log)
 
 
 @pytest.mark.docker
@@ -34,4 +35,4 @@ def test_correct_answer_scoring() -> None:
         ),
         limit=1,
     )
-    assert log.status == "success"
+    assert_eval_success(log)
