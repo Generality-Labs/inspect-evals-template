@@ -215,8 +215,10 @@ automatically.
   contains the required checklist
 - **Sync Template** (`sync-template.yml`) — weekly sync of managed files
   from the upstream template (skips inactive repos)
-- **Sync Upstream** (`sync-upstream.yml`) — weekly sync of managed files
-  from [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals)
+- **Sync Upstream** (`sync-upstream.yml`) — retired in v1.5.0 and does
+  nothing; you can delete it. It used to copy managed files from
+  [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals), which now
+  ships its shared code as packages.
 
 ### Repository settings for sync workflows
 
