@@ -44,6 +44,7 @@ select = [
     "PLE",    # pylint error
     "PLR",    # pylint refactor
     "PLW",    # pylint warning
+    "PLW1514", # unspecified-encoding: open() and read_text() without encoding=
     "UP006",  # Prevent List and Dict, use list and dict instead.
     "UP007",  # Prevent Union[X, Y], use [X | Y] instead.
     "UP045",  # Prevent Optional[X], use X | None instead.
@@ -61,6 +62,10 @@ ignore = [
     "PLR0913", # Too many arguments in function definition
     "PLR0915", # Too many statements
 ]
+# PLW1514 is a preview rule, so it needs preview. explicit-preview-rules keeps the
+# other preview rules under the selected prefixes, such as PLW and FURB, off.
+preview = true
+explicit-preview-rules = true
 
 [tool.ruff.lint.per-file-ignores]
 "**/{tests,examples}/*" = ["PLR2004"]  # Allow magic numbers in tests and examples
