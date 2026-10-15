@@ -53,7 +53,7 @@ def get_dataset_infos_dict(path: str, revision: str | None = None) -> DatasetInf
     # Deferred so only evaluations that call these wrappers need `datasets`; they
     # declare it in their own extra. Until one does, the linter would report the
     # import as undeclared. Remove the suppression once an evaluation declares it.
-    from datasets import (  # inspect-evals-lint: ignore[external_dependencies]
+    from datasets import (  # inspect-evals-lint: ignore[external_dependencies] -- no evaluation declares datasets yet
         get_dataset_config_names,
         load_dataset_builder,
     )
