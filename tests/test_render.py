@@ -248,3 +248,14 @@ def test_docs_name_the_eval(rendered: Rendered) -> None:
     assert readme.startswith("# sample-eval\n")
     assert (rendered.path / "CLAUDE.md").read_text().strip() == "@AGENTS.md"
     assert "npx skills add Generality-Labs/agent-skills" in readme
+
+
+@pytest.mark.docker
+@pytest.mark.slow(120)
+def test_agentic_react_runs_in_docker(template_src: Path, tmp_path: Path) -> None:
+    out = render(template_src, tmp_path / "docker")
+    run(out.path, "uv", "sync", "--quiet")
+    result = run(
+        out.path, "uv", "run", "pytest", "tests/examples/test_agentic.py", "--runslow", "-q"
+    )
+    assert "5 passed" in result.stdout
