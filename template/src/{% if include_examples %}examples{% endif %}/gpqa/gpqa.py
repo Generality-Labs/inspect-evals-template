@@ -25,6 +25,7 @@ inspect eval examples/gpqa_diamond -T high_level_domain=Biology
 inspect eval examples/gpqa_diamond -T subdomain=Genetics
 """
 
+from importlib import resources
 from typing import Any, Literal, get_args
 
 from inspect_ai import Task, task
@@ -32,7 +33,7 @@ from inspect_ai.dataset import Dataset, Sample, csv_dataset
 from inspect_ai.scorer import choice
 from inspect_ai.solver import multiple_choice
 
-from utils.metadata import load_version_from_yaml
+import yaml
 
 GPQA_DIAMOND_DATASET_URL = (
     "https://openaipublic.blob.core.windows.net/simple-evals/gpqa_diamond.csv"
@@ -58,7 +59,12 @@ GPQASubdomain = Literal[
     "Relativistic Mechanics",
 ]
 
-EVAL_VERSION = load_version_from_yaml("examples.gpqa")
+def _eval_version() -> str:
+    text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
+    return str(yaml.safe_load(text)["version"])
+
+
+EVAL_VERSION = _eval_version()
 
 
 def get_gpqa_diamond_dataset(

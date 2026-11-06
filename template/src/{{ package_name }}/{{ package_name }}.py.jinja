@@ -1,0 +1,50 @@
+"""{{ eval_description }}"""
+
+from importlib import resources
+from typing import Any
+
+import yaml
+from inspect_ai import Task, task
+from inspect_ai.dataset import MemoryDataset, Sample
+from inspect_ai.scorer import match
+from inspect_ai.solver import generate
+
+
+def _eval_version() -> str:
+    text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
+    return str(yaml.safe_load(text)["version"])
+
+
+EVAL_VERSION = _eval_version()
+
+# Stands in for the benchmark's dataset. Replace it with a loader: see
+# inspect_evals_utils.datasets for cached JSON and CSV files and
+# inspect_evals_utils.huggingface for pinned Hugging Face datasets.
+SAMPLE_RECORDS: list[dict[str, str]] = [
+    {"id": "sample-1", "question": "What is 2 + 2?", "answer": "4"},
+    {
+        "id": "sample-2",
+        "question": "Name the largest planet in the solar system.",
+        "answer": "Jupiter",
+    },
+]
+
+
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    """Convert one dataset record into an Inspect sample."""
+    return Sample(id=record["id"], input=record["question"], target=record["answer"])
+
+
+@task
+def {{ package_name }}() -> Task:
+    """{{ eval_description }}
+
+    Returns:
+        A task that asks each question and scores the answer by exact match.
+    """
+    return Task(
+        dataset=MemoryDataset([record_to_sample(r) for r in SAMPLE_RECORDS]),
+        solver=generate(),
+        scorer=match(),
+        version=EVAL_VERSION,
+    )
