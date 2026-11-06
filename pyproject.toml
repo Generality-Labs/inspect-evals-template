@@ -1,184 +1,31 @@
-# MANAGED FILE - Quality tool configs are managed. See MANAGED_FILES.md
-# USER: Sections marked with "# USER:" require your customization.
-
-[build-system]
-requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
-fallback_version = "0.0.0+unknown"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["utils*"]  # USER: add your eval packages, e.g. "my_eval*"
-
-[tool.setuptools.package-data]
-"*" = ["eval.yaml"]
-
-# Evaluation checks (see AUTOMATED_CHECKS.md). The multi-eval preset expects one
-# package per evaluation directly under src/, registered under
-# [project.entry-points.inspect_ai]; src/utils is linted as a helper package
-# and src/examples is not linted. A repository with a single evaluation may
-# switch to preset = "single-eval" (flat tests, README at the repo root).
-[tool.inspect-evals-lint]
-preset = "multi-eval"
-
-[tool.ruff]
-extend-exclude = [
-    "agent_artefacts",
-]
-src = ["src"]
-target-version = "py311"
-
-[tool.ruff.lint]
-select = [
-    "E",      # pycodestyle errors
-    "W",      # pycodestyle warnings
-    "F",      # flake8
-    "D",      # pydocstyle
-    "I",      # isort
-    "SIM101", # duplicate isinstance
-    "YTT",    # flake8-2020
-    "LOG",    # flake8-logging
-    "NPY",    # numpy-specific-rules-npy
-    "PLE",    # pylint error
-    "PLR",    # pylint refactor
-    "PLW",    # pylint warning
-    "PLW1514", # unspecified-encoding: open() and read_text() without encoding=
-    "UP006",  # Prevent List and Dict, use list and dict instead.
-    "UP007",  # Prevent Union[X, Y], use [X | Y] instead.
-    "UP045",  # Prevent Optional[X], use X | None instead.
-    "FURB",   # refurb
-    "TID252", # relative-imports
-]
-ignore = [
-    "E203",    # whitespace-before-punctuation
-    "E501",    # line-too-long
-    "D10",     # missing docstrings
-    "D212",    # docstring multi-line-summary-first-line
-    "D415",    # docstring missing-terminal-punctuation
-    "PLR0911", # Too many return statements
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments in function definition
-    "PLR0915", # Too many statements
-]
-# PLW1514 is a preview rule, so it needs preview. explicit-preview-rules keeps the
-# other preview rules under the selected prefixes, such as PLW and FURB, off.
-preview = true
-explicit-preview-rules = true
-
-[tool.ruff.lint.per-file-ignores]
-"**/{tests,examples}/*" = ["PLR2004"]  # Allow magic numbers in tests and examples
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-rA --color=yes --durations=10"
-testpaths = ["tests"]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
-log_level = "WARNING"
-env_files = [".env"]
-# pytest-inspect-evals registers the slow, dataset_download, k8s, gpu,
-# huggingface, docker and posix_only markers. Dataset-download tests run by
-# default here; set RUN_DATASET_DOWNLOAD_TESTS=0 to skip them.
-inspect_evals_dataset_download = true
-
-[tool.mypy]
-exclude = [
-    "build",
-    "agent_artefacts",
-]
-warn_unused_ignores = true
-no_implicit_reexport = true
-strict_equality = true
-warn_redundant_casts = true
-warn_unused_configs = true
-
-[[tool.mypy.overrides]]
-module = ["examples.*", "utils.*"]
-warn_return_any = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-extra_checks = true
-disable_error_code = "unused-ignore"
-
-[[tool.mypy.overrides]]
-module = ["datasets", "datasets.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-# Test files import these helpers via runtime sys.path manipulation, so
-# mypy can't resolve them statically. Treat them as untyped.
-module = ["add_readme_section", "generate_readmes"]
-ignore_missing_imports = true
-
 [project]
-name = "inspect-eval-template"
-description = "Template for Inspect AI evaluations"
-authors = [{ name = "Your Name" }]
-readme = "README.md"
-requires-python = ">=3.11"
-license = "MIT"
-dynamic = ["version"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Environment :: Console",
-    "Intended Audience :: Science/Research",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Typing :: Typed",
-    "Operating System :: OS Independent",
-]
-dependencies = [
-    "inspect_ai>=0.3.158",
-    "pyyaml>=5.1.0",
-    # USER: Add your eval's dependencies here
-]
-
-[project.urls]
-# USER: Update these URLs
-"Source Code" = "https://github.com/your-org/your-eval"
-"Issue Tracker" = "https://github.com/your-org/your-eval/issues"
-
-# Register each evaluation so Inspect can discover it.
-# Example (uncomment and adapt):
-#   my_eval = "my_eval"
-#
-# This registers the "my_eval" package so that
-# `inspect eval my_eval/task_name` works. The __init__.py
-# should export your @task functions.
-# Note: examples are NOT registered -- only your evaluations under src/.
-[project.entry-points.inspect_ai]
+name = "inspect-evals-template"
+version = "0.0.0"
+description = "Test harness for the inspect-evals-template copier template"
+requires-python = ">=3.12"
+dependencies = []
 
 [dependency-groups]
 dev = [
-    "inspect-evals-lint==0.12.0",  # Evaluation checks; see AUTOMATED_CHECKS.md
-    "inspect-scout>=0.3.0",  # llm_scanner API used by agent_artefacts/trajectory_analysis/inspect_scout/
-    "mypy",
-    "pre-commit",
-    "pytest",
-    "pytest-asyncio",
-    "pytest-dotenv",
-    "pytest-inspect-evals==0.1.0",  # Test gates, markers, fixtures and helpers; see CONTRIBUTING.md
-    "pytest-mock",
-    "rich",
-    "ruff==0.15.11",  # match .pre-commit-config.yaml and .github/workflows/checks.yml
-    "toml",
-    "types-PyYAML",
-    "uv==0.12.5",  # match the uv-pre-commit rev; setup-uv installs this version in CI
+    "copier>=9.19",
+    "pytest>=8.4",
+    "pytest-inspect-evals==0.3.0",
+    "pyyaml>=6",
+    "ruff==0.17.4",
 ]
 
-[tool.check-wheel-contents]
-ignore = ["W005", "W009"]
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-rA --durations=10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["template", "includes"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "C4", "PT", "PIE", "ISC", "N", "RUF", "PLE", "PLW"]
+ignore = ["E501", "ISC001"]
