@@ -185,3 +185,22 @@ def test_template_update_opt_out(template_src: Path, tmp_path: Path) -> None:
     out = render(template_src, tmp_path / "no-update", use_template_update=False)
     assert not (out.path / ".github/workflows/template-update.yml").exists()
     assert (out.path / ".copier-answers.yml").exists()
+
+
+def test_examples_follow_the_answers(rendered: Rendered) -> None:
+    examples = rendered.path / "src/examples"
+    tests = rendered.path / "tests/examples"
+    pyproject = (rendered.path / "pyproject.toml").read_text()
+    if rendered.answers.get("include_examples", True):
+        assert (examples / "gpqa/gpqa.py").exists()
+        assert (examples / "agentic/agentic.py").exists()
+        assert (tests / "test_agentic.py").exists()
+        assert "inspect-swe" in pyproject
+    else:
+        assert not examples.exists()
+        assert not tests.exists()
+        assert "inspect-swe" not in pyproject
+    wants_judge = bool(rendered.answers.get("include_llm_judge_example", False))
+    assert (examples / "llm_judge/llm_judge.py").exists() == wants_judge
+    assert (tests / "test_llm_judge.py").exists() == wants_judge
+    assert not (examples / "simple_qa").exists()

@@ -1,7 +1,9 @@
 title: "Agentic Eval: Example Agent-Based Evaluation"
 description: |
-  Example evaluation demonstrating agent-based tool use in a
-  Docker sandbox. Similar to evaluations like GAIA.
+  Example evaluation demonstrating agent-based tool use in a Docker
+  sandbox, with the agent chosen by the `agent` task parameter: Inspect's
+  ReAct agent or Claude Code through inspect_swe. Similar to evaluations
+  like GAIA.
 group: Agents
 contributors:
   - inspect-eval-template
