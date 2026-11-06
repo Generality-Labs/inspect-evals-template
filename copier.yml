@@ -21,9 +21,10 @@ _message_after_copy: |
 
   Next steps:
     cd {{ eval_name }}
+    git init
     uv sync                      # creates uv.lock; CI needs it committed
-    uv run pre-commit install
-    git init && git add -A && git commit -m "Initial commit from inspect-evals-template"
+    uv run pre-commit install    # needs the git repo from the line above
+    git add -A && git commit -m "Initial commit from inspect-evals-template"
 
   Then open the folder in Claude Code and trust it: the inspect-evals skills load from .claude/settings.json.
   Codex and other agents: see README.md, "Skills".
@@ -84,7 +85,7 @@ include_llm_judge_example:
 
 use_claude_review:
   type: bool
-  help: Add the Claude Code review workflow? (needs an ANTHROPIC_API_KEY secret in the repo)
+  help: Add the Claude Code review workflow? (reviews through AWS Bedrock; needs an ANTHROPIC_ROLE_ARN secret for OIDC and the AUTO_REVIEW_ALL_COMMITS variable)
   default: false
 
 use_template_update:

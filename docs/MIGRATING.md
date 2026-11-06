@@ -24,13 +24,15 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
 
    A repo with tests under `tests/<package>/` but its README at the root keeps `layout: multi-eval` and adds `readme_location = "repo-root"` under `[tool.inspect-evals-lint]` in `pyproject.toml`; `copier update` keeps that line.
 
-1. Commit, then run the update:
+1. Commit, then render the template into the repo. This is `copier copy`, not `copier update`: an update needs a previous render to diff against, and a v1 repo has none, so it would change nothing. With the answers file present copier reads the answers from it, replaces the managed files, leaves `README.md`, `src/<package>/` and the tests alone, and creates every v2 file that is missing.
 
    ```bash
-   uvx copier update --trust --defaults --vcs-ref v2.0.0
+   uvx copier copy --defaults --overwrite --vcs-ref v2.0.0 gh:Generality-Labs/inspect-evals-template .
    ```
 
-1. Resolve any conflict markers copier left. `pyproject.toml` is the file most likely to conflict; keep your dependencies and entry point, and take the template's dependency groups and tool tables.
+   Without `--overwrite`, copier asks before replacing each existing file.
+
+1. Review `git diff pyproject.toml` and put back your dependencies and entry point; keep the template's dependency groups and tool tables.
 
 1. Delete the v1.x files copier leaves behind: `MANAGED_FILES.md`, `.template-version`, `.template-sync-sha`, `.github/workflows/sync-template.yml`, `.github/workflows/sync-upstream.yml`, `.github/workflows/checks.yml`, `.github/workflows/pr-template-check.yml`, `.github/workflows/markdown-lint.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `.markdownlint.yaml`, `.markdownlintignore`, `tools/`, `tests/test_*.py` for the tools, `src/utils/`, `.claude/skills/`, `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` and `src/examples/simple_qa/`.
 

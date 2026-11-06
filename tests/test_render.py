@@ -9,8 +9,17 @@ from pathlib import Path
 
 import pytest
 import yaml
+from copier import run_copy
 
-from tests.conftest import ROOT, Rendered, layout_of, render, run, skeleton_test
+from tests.conftest import (
+    BASE_ANSWERS,
+    ROOT,
+    Rendered,
+    layout_of,
+    render,
+    run,
+    skeleton_test,
+)
 
 
 def test_answers_file_stores_the_questions_only(rendered: Rendered) -> None:
@@ -32,6 +41,8 @@ def test_message_after_copy_lists_next_steps() -> None:
     message = yaml.safe_load((ROOT / "copier.yml").read_text())["_message_after_copy"]
     for step in ["uv sync", "uv run pre-commit install", "git init", "uv.lock", "git add -A"]:
         assert step in message
+    # pre-commit install needs a git repo, so git init must come first.
+    assert message.index("git init") < message.index("pre-commit install")
 
 
 def test_v1_files_are_gone(rendered: Rendered) -> None:
@@ -93,6 +104,8 @@ def test_python_version_flows_through(template_src: Path, tmp_path: Path) -> Non
     assert data["project"]["requires-python"] == ">=3.13"
     assert data["tool"]["ruff"]["target-version"] == "py313"
     assert data["tool"]["basedpyright"]["pythonVersion"] == "3.13"
+    ci = yaml.safe_load((out.path / ".github/workflows/ci.yml").read_text())
+    assert ci["jobs"]["ci"]["with"]["python-version"] == "3.13"
 
 
 @pytest.mark.parametrize("layout", ["multi-eval", "single-eval"])
@@ -259,3 +272,45 @@ def test_agentic_react_runs_in_docker(template_src: Path, tmp_path: Path) -> Non
         out.path, "uv", "run", "pytest", "tests/examples/test_agentic.py", "--runslow", "-q"
     )
     assert "5 passed" in result.stdout
+
+
+def test_answers_reach_the_skeleton(template_src: Path, tmp_path: Path) -> None:
+    out = render(template_src, tmp_path / "widgets", eval_description="Counts widgets in images")
+    module = (out.path / "src/sample_eval/sample_eval.py").read_text()
+    assert module.startswith('"""Counts widgets in images"""')
+    assert module.count("Counts widgets in images") == 2  # module and task docstrings
+    assert "A sample evaluation for the template tests" not in module
+    assert "Counts widgets in images" in (out.path / "src/sample_eval/eval.yaml").read_text()
+    assert "Counts widgets in images" in (out.path / "src/sample_eval/README.md").read_text()
+    assert 'description = "Counts widgets in images"' in (out.path / "pyproject.toml").read_text()
+
+
+def test_claude_review_files_match_the_repo(template_src: Path, tmp_path: Path) -> None:
+    out = render(template_src, tmp_path / "review", use_claude_review=True)
+    workflow = (out.path / ".github/workflows/claude-review.yaml").read_text()
+    action = (out.path / ".github/actions/claude-setup/action.yaml").read_text()
+    assert "MANAGED FILE" not in workflow
+    assert "MANAGED FILE" not in action
+    assert "Agent-Checkable Standards" not in workflow
+    help_text = yaml.safe_load((ROOT / "copier.yml").read_text())["use_claude_review"]["help"]
+    assert "ANTHROPIC_ROLE_ARN" in help_text
+    assert "ANTHROPIC_API_KEY" not in help_text
+
+
+def test_adopting_an_existing_repo_replaces_managed_files(
+    template_src: Path, tmp_path: Path
+) -> None:
+    # docs/MIGRATING.md: a v1 repo writes .copier-answers.yml and runs `copier copy` into itself.
+    repo = tmp_path / "v1-repo"
+    repo.mkdir()
+    (repo / "pyproject.toml").write_text('[project]\nname = "sample-eval"\ndynamic = ["version"]\n')
+    (repo / "README.md").write_text("# The author's README\n")
+    (repo / "MANAGED_FILES.md").write_text("v1 leftovers\n")
+    answers = "\n".join(f"{k}: {v}" for k, v in BASE_ANSWERS.items()) + "\n"
+    (repo / ".copier-answers.yml").write_text(answers)
+    run_copy(str(template_src), str(repo), defaults=True, overwrite=True, quiet=True)
+    assert "inspect-evals-utils" in (repo / "pyproject.toml").read_text()
+    assert (repo / "README.md").read_text() == "# The author's README\n"
+    assert (repo / ".github/workflows/eval-checks.yml").exists()
+    assert (repo / "src/sample_eval/sample_eval.py").exists()
+    assert (repo / "MANAGED_FILES.md").exists()  # copier leaves v1 files for the author to delete

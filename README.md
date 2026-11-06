@@ -36,7 +36,7 @@ my-eval/
 | `layout`                    | `multi-eval`      | where tests and the eval README live (see below)               |
 | `include_examples`          | yes               | ships `src/examples/` (gpqa, agentic) and their tests          |
 | `include_llm_judge_example` | no                | adds the `llm_judge` example                                   |
-| `use_claude_review`         | no                | adds `claude-review.yaml`; needs an `ANTHROPIC_API_KEY` secret |
+| `use_claude_review`         | no                | adds `claude-review.yaml` (Bedrock via an `ANTHROPIC_ROLE_ARN` secret) |
 | `use_template_update`       | yes               | weekly `copier update` pull request                            |
 | `license`                   | MIT               | `LICENSE`                                                      |
 
