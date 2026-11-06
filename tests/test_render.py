@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -142,3 +143,45 @@ def test_pre_commit_clean(synced: Rendered) -> None:
 
 def test_make_check(synced: Rendered) -> None:
     run(synced.path, "make", "check")
+
+
+SHA_PIN = re.compile(r"^[0-9a-f]{40}$")
+
+
+def _uses(workflow: Path) -> list[str]:
+    data = yaml.safe_load(workflow.read_text())
+    found: list[str] = []
+    for job in data["jobs"].values():
+        if "uses" in job:
+            found.append(job["uses"])
+        for step in job.get("steps", []):
+            if "uses" in step:
+                found.append(step["uses"])
+    return found
+
+
+def test_workflows_pin_third_party_actions(rendered: Rendered) -> None:
+    workflows = sorted((rendered.path / ".github/workflows").glob("*.y*ml"))
+    assert workflows
+    for wf in workflows:
+        for ref in _uses(wf):
+            name, _, version = ref.partition("@")
+            if name.startswith("Generality-Labs/"):
+                assert version == "v1", (wf.name, ref)
+            elif not name.startswith("./"):
+                assert SHA_PIN.match(version), (wf.name, ref)
+
+
+def test_ci_calls_python_ci_with_answers(rendered: Rendered) -> None:
+    ci = yaml.safe_load((rendered.path / ".github/workflows/ci.yml").read_text())
+    job = ci["jobs"]["ci"]
+    assert (
+        job["uses"] == "Generality-Labs/python-project-template/.github/workflows/python-ci.yml@v1"
+    )
+    assert job["with"] == {"python-version": "3.12", "typecheck-paths": "src tests"}
+
+
+def test_template_update_opt_out(template_src: Path, tmp_path: Path) -> None:
+    out = render(template_src, tmp_path / "no-update", use_template_update=False)
+    assert not (out.path / ".github/workflows/template-update.yml").exists()
+    assert (out.path / ".copier-answers.yml").exists()

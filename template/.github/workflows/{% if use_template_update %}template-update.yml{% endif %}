@@ -1,0 +1,29 @@
+name: Template Update
+
+# Pulls changes from inspect-evals-template via `copier update`, opening a PR
+# only when something changed. `v2` is the template's moving major tag; a
+# release moves it, and the next weekly run picks the release up.
+#
+# To update to something other than `v2`, run `uvx copier update` locally with
+# `--vcs-ref`.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  template-update:
+    uses: Generality-Labs/python-project-template/.github/workflows/template-update.yml@v1
+    permissions:
+      contents: write # push the branch holding the template update
+      pull-requests: write # open the PR for it
+    with:
+      template-ref: v2
+      # Set true, and pass the secret below, to have Claude attempt the merge
+      # conflicts copier can't resolve on its own.
+      resolve-conflicts-with-claude: false
+    # secrets:
+    #   anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

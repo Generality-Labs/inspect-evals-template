@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # Moving major tag on purpose (see .github/zizmor.yml): Generality Labs owns
+    # that repo, so CI fixes flow in without a bump PR per template release.
+    # Dependabot is told to leave it alone in .github/dependabot.yml; pinning
+    # it to an exact version here would be reverted by the next copier update.
+    uses: Generality-Labs/python-project-template/.github/workflows/python-ci.yml@v1
+    with:
+      python-version: "{{ python_version }}"
+      typecheck-paths: "src tests"
