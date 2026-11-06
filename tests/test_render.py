@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import tomllib
 from pathlib import Path
@@ -212,3 +213,38 @@ def test_claude_review_present_only_when_asked(rendered: Rendered) -> None:
     assert (rendered.path / ".github/actions/claude-setup/action.yaml").exists() == wants
     zizmor = (rendered.path / ".github/zizmor.yml").read_text()
     assert ("claude-review.yaml" in zizmor) == wants
+
+
+def test_claude_settings_enable_the_plugin(rendered: Rendered) -> None:
+    settings = json.loads((rendered.path / ".claude/settings.json").read_text())
+    marketplace = settings["extraKnownMarketplaces"]["generality"]["source"]
+    assert marketplace == {
+        "source": "github",
+        "repo": "Generality-Labs/agent-skills",
+        "ref": "v1.0.0",
+    }
+    assert settings["enabledPlugins"] == {"inspect-evals@generality": True}
+    assert "Bash(uv run basedpyright:*)" in settings["permissions"]["allow"]
+    assert "Bash(uv run mypy:*)" not in settings["permissions"]["allow"]
+
+
+def test_scanners_ship_unchanged(rendered: Rendered) -> None:
+    scout = rendered.path / "agent_artefacts/trajectory_analysis/inspect_scout"
+    assert {p.name for p in scout.glob("*.py")} == {
+        "analyze_validity.py",
+        "extract_results.py",
+        "run_all_scanners.py",
+        "scanners.py",
+        "utils.py",
+    }
+
+
+def test_docs_name_the_eval(rendered: Rendered) -> None:
+    for doc in ["README.md", "AGENTS.md", "CONTRIBUTING.md"]:
+        text = (rendered.path / doc).read_text()
+        assert "{{" not in text, doc
+        assert "TODO" not in text, doc
+    readme = (rendered.path / "README.md").read_text()
+    assert readme.startswith("# sample-eval\n")
+    assert (rendered.path / "CLAUDE.md").read_text().strip() == "@AGENTS.md"
+    assert "npx skills add Generality-Labs/agent-skills" in readme

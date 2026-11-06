@@ -1,0 +1,36 @@
+# Contributing to {{ eval_name }}
+
+## Running tests
+
+`make test` runs the test suite. The test gates, markers and fixtures come from the [pytest-inspect-evals](https://github.com/Generality-Labs/pytest-inspect-evals) plugin.
+
+| Marker             | Runs by default | Enable with                                                |
+| ------------------ | --------------- | ---------------------------------------------------------- |
+| `slow`             | no              | `uv run pytest --runslow` or `RUN_SLOW_TESTS=1`            |
+| `dataset_download` | yes, here       | `--dataset-download`; `RUN_DATASET_DOWNLOAD_TESTS=0` skips |
+| `gpu`              | no              | `uv run pytest --rungpu` or `RUN_GPU_TESTS=1`              |
+| `docker`           | yes             | skipped on Windows                                         |
+| `huggingface`      | yes             | skipped without `HF_TOKEN`; retried twice                  |
+| `posix_only`       | yes             | skipped on Windows                                         |
+
+Use `mockllm/model` for model output in tests, `unittest.mock` for external services and `tmp_path` for files. A test that reaches the network needs the `dataset_download` or `huggingface` marker.
+
+## Checks
+
+`make check` runs the checks CI runs:
+
+- `ruff check` and `ruff format --check`
+- `basedpyright src tests` in standard mode
+- `inspect-evals-lint --all` (the rules are documented one per page at [inspect-evals-lint](https://github.com/Generality-Labs/inspect-evals-lint/tree/main/docs/rules))
+- `inspect-evals-readmes generate --check`, which fails when the README sections generated from `eval.yaml` and the task signatures are out of date (`make readmes` regenerates them)
+- `pre-commit run --all-files` (zizmor, actionlint, mdformat, uv-lock and the standard hooks)
+
+`uv run pre-commit install` runs the hooks on every commit.
+
+## eval.yaml
+
+`src/{{ package_name }}/eval.yaml` holds the eval's title, description, contributors, version and tasks. The fields are documented in the [eval.yaml reference](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/CONTRIBUTING.md#evalyaml-reference) in inspect_evals. Bump `version` whenever a change can move scores; [TASK_VERSIONING.md](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/TASK_VERSIONING.md) explains the format.
+
+## Submitting to the inspect_evals register
+
+Evals hosted in their own repo are listed in inspect_evals through a metadata entry. Read [register/README.md](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/register/README.md) and open a [Register Eval Submission](https://github.com/UKGovernmentBEIS/inspect_evals/issues/new?template=register-submission.yml) issue when the eval is ready.
