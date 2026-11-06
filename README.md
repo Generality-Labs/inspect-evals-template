@@ -42,6 +42,8 @@ my-eval/
 
 `layout` matches the two [inspect-evals-lint](https://github.com/Generality-Labs/inspect-evals-lint) presets. `multi-eval` keeps tests under `tests/<package>/` and the eval README at `src/<package>/README.md`. `single-eval` keeps tests flat under `tests/` and uses the repo README as the eval README. An existing repo picks the layout it already has.
 
+`eval_name` must be kebab-case and cannot be a Python keyword or one of the template's reserved package names: `examples`, `tests` and `src`. Descriptions and author details can contain quotes, backslashes and Unicode. The selected `python_version` also sets the interpreter used by pre-commit's Python hooks.
+
 ## Updating an existing repo
 
 Repos created from the template get a weekly pull request from `copier update` when `use_template_update` is yes, and `uvx copier update` works by hand at any time. `README.md`, `src/<package>/` and `tests/<package>/` are never overwritten.
@@ -66,4 +68,4 @@ uv run pytest            # renders four answer sets and runs each result's check
 uv run pytest --runslow  # also runs the agentic example's Docker test
 ```
 
-Releases: add a section to `CHANGELOG.md`, tag `vX.Y.Z`, and publish a GitHub release for the tag. `bump-v2.yml` then annotates the tag and moves `v2`, which is what `template-update.yml` in generated repos follows.
+Releases: add a section to `CHANGELOG.md`, tag `vX.Y.Z`, and publish a GitHub release for the tag. `bump-v2.yml` then annotates the tag and creates or moves `v2`, which is what `template-update.yml` in generated repos follows.

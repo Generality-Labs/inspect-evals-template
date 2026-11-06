@@ -157,9 +157,8 @@ jobs:
           #
           # Publishing a release for a tag that does not exist yet -- the GitHub
           # UI's default, and `gh release create` without --verify-tag -- makes
-          # that lightweight tag, and template-release-on-merge.yml creates its
-          # tag lightweight too, so this step runs on every release. Rather than refuse the release over it, give
-          # the tag an annotation here so it outranks v2 and copier reads
+          # that lightweight tag. Give the tag an annotation here so it
+          # outranks v2 and copier reads
           # "v2.1.0". Annotating v2 too would break it again: v2 is re-tagged on
           # every release, so it would always be the newer of the two.
           #
@@ -185,6 +184,13 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/v2" \
-            -f sha="${RELEASE_SHA}" -F force=true
+          exists=$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/v2" \
+            --jq 'any(.[]; .ref == "refs/tags/v2")')
+          if [ "$exists" = "true" ]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/v2" \
+              -f sha="${RELEASE_SHA}" -F force=true
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref=refs/tags/v2 -f sha="${RELEASE_SHA}"
+          fi
           echo "v2 -> ${RELEASE_SHA}"

@@ -42,3 +42,9 @@ Two things about versions here:
 - `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` (linked from `AGENTS.md` instead).
 - The `simple_qa` example.
 - `mypy` and `setuptools_scm`.
+
+### Fixed
+
+- Creation preserves quotes, backslashes and Unicode in descriptions and author details, and rejects Python keywords and reserved template package names.
+- Pre-commit's Python hooks use the selected `python_version`.
+- The first v2 release creates the `v2` tag; subsequent releases update it. A failed tag lookup stops the workflow before it writes a ref.

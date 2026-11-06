@@ -35,6 +35,14 @@ eval_name:
   validator: >-
     {% if not (eval_name | regex_search('^[a-z][a-z0-9]*(-[a-z0-9]+)*$')) %}
     eval_name must be kebab-case: lowercase letters and digits, single hyphens between words
+    {% elif eval_name in [
+      'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
+      'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from',
+      'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not',
+      'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
+      'examples', 'tests', 'src'
+    ] %}
+    eval_name is reserved by Python or the template; choose another name
     {% endif %}
 
 eval_description:

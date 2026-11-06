@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import keyword
 import re
 import tomllib
 from pathlib import Path
@@ -35,6 +37,51 @@ def test_eval_name_must_be_kebab_case(template_src: Path, tmp_path: Path, bad: s
     # copier raises a plain ValueError for a validator failure on non-interactive data.
     with pytest.raises(ValueError, match="kebab-case"):
         render(template_src, tmp_path / bad.replace(" ", "_"), eval_name=bad)
+
+
+@pytest.mark.parametrize(
+    "bad", [word for word in keyword.kwlist if word.islower()] + ["examples", "tests", "src"]
+)
+def test_eval_name_rejects_reserved_names(template_src: Path, tmp_path: Path, bad: str) -> None:
+    """Reject names that would produce invalid imports or overwrite template packages."""
+    with pytest.raises(ValueError, match="reserved"):
+        render(template_src, tmp_path / bad, eval_name=bad)
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        'Tests "chain of thought" reasoning',
+        "Checks C:\\new\\models\\",
+        'Explains """quoted""" answers with Unicode 🧪',
+    ],
+)
+def test_free_text_answers_are_escaped(
+    template_src: Path, tmp_path: Path, description: str
+) -> None:
+    """Quotes and backslashes must preserve their meaning in TOML and Python."""
+    author = 'Alex "Example" O\'Brien 🧪'
+    email = '"alex.example"@example.com'
+    out = render(
+        template_src,
+        tmp_path / "escaped",
+        eval_description=description,
+        author_name=author,
+        author_email=email,
+    )
+    project = tomllib.loads((out.path / "pyproject.toml").read_text())["project"]
+    assert project["description"] == description
+    assert project["authors"] == [{"name": author, "email": email}]
+    module = ast.parse((out.path / "src/sample_eval/sample_eval.py").read_text())
+    assert ast.get_docstring(module) == description
+    task = next(
+        node
+        for node in module.body
+        if isinstance(node, ast.FunctionDef) and node.name == "sample_eval"
+    )
+    docstring = ast.get_docstring(task)
+    assert docstring is not None
+    assert docstring.splitlines()[0] == description
 
 
 def test_message_after_copy_lists_next_steps() -> None:
@@ -106,6 +153,8 @@ def test_python_version_flows_through(template_src: Path, tmp_path: Path) -> Non
     assert data["tool"]["basedpyright"]["pythonVersion"] == "3.13"
     ci = yaml.safe_load((out.path / ".github/workflows/ci.yml").read_text())
     assert ci["jobs"]["ci"]["with"]["python-version"] == "3.13"
+    hooks = yaml.safe_load((out.path / ".pre-commit-config.yaml").read_text())
+    assert hooks["default_language_version"]["python"] == "python3.13"
 
 
 @pytest.mark.parametrize("layout", ["multi-eval", "single-eval"])

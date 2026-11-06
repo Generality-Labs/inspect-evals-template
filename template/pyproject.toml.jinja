@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "{{ eval_name }}"
 version = "0.1.0"
-description = "{{ eval_description }}"
+description = {{ eval_description | to_json(ensure_ascii=False) }}
 readme = "README.md"
 license = "{{ 'LicenseRef-Proprietary' if license == 'Proprietary' else license }}"
-authors = [{ name = "{{ author_name }}", email = "{{ author_email }}" }]
+authors = [{ name = {{ author_name | to_json(ensure_ascii=False) }}, email = {{ author_email | to_json(ensure_ascii=False) }} }]
 requires-python = ">={{ python_version }}"
 dependencies = [
     "inspect_ai>=0.3.262",
