@@ -141,8 +141,7 @@ def test_gpqa_diamond_domain_filter_params() -> None:
     task = gpqa_diamond(high_level_domain=["Physics", "Chemistry"])
     assert task.dataset is not None
     assert all(
-        s.metadata is not None
-        and s.metadata["high_level_domain"] in {"Physics", "Chemistry"}
+        s.metadata is not None and s.metadata["high_level_domain"] in {"Physics", "Chemistry"}
         for s in task.dataset
     )
 

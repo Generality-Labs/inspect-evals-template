@@ -1,0 +1,3 @@
+# mdformat configuration: https://mdformat.readthedocs.io/en/stable/users/configuration_file.html
+wrap = "no"    # one line per paragraph (no reflow); keeps prose diffs minimal
+number = true  # ordered lists render 1. 2. 3. instead of all 1.

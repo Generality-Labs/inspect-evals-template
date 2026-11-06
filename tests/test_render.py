@@ -113,3 +113,32 @@ def test_rendered_repo_tests_pass(synced: Rendered) -> None:
     result = run(synced.path, "uv", "run", "pytest", "-q")
     assert " passed" in result.stdout
     assert "failed" not in result.stdout
+
+
+def test_ruff_clean(synced: Rendered) -> None:
+    run(synced.path, "uv", "run", "ruff", "check")
+    run(synced.path, "uv", "run", "ruff", "format", "--check")
+
+
+def test_basedpyright_clean(synced: Rendered) -> None:
+    run(synced.path, "uv", "run", "basedpyright", "src", "tests")
+
+
+def test_lint_clean(synced: Rendered) -> None:
+    run(synced.path, "uv", "run", "inspect-evals-lint", "--all")
+
+
+def test_readmes_up_to_date(synced: Rendered) -> None:
+    run(synced.path, "uv", "run", "inspect-evals-readmes", "generate", "--check")
+
+
+def test_pre_commit_clean(synced: Rendered) -> None:
+    # The synced fixture has already run git init and git add -A.
+    run(synced.path, "uv", "run", "pre-commit", "run", "--all-files", "--show-diff-on-failure")
+    # The fixture staged everything, so any hook rewrite shows as an unstaged change.
+    changed = run(synced.path, "git", "diff", "--name-only").stdout
+    assert changed == "", f"a hook rewrote a rendered file:\n{changed}"
+
+
+def test_make_check(synced: Rendered) -> None:
+    run(synced.path, "make", "check")

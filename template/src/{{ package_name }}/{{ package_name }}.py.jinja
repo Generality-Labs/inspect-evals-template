@@ -1,4 +1,4 @@
-"""{{ eval_description }}"""
+"""A sample evaluation for the template tests"""
 
 from importlib import resources
 from typing import Any
@@ -37,7 +37,7 @@ def record_to_sample(record: dict[str, Any]) -> Sample:
 
 @task
 def {{ package_name }}() -> Task:
-    """{{ eval_description }}
+    """A sample evaluation for the template tests
 
     Returns:
         A task that asks each question and scores the answer by exact match.

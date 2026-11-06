@@ -1,8 +1,8 @@
 from inspect_ai import eval
 from pytest_inspect_evals.assertions import assert_eval_success
 
-from {{ package_name }} import {{ package_name }}, record_to_sample
-from {{ package_name }}.{{ package_name }} import EVAL_VERSION, SAMPLE_RECORDS
+from {{ package_name }} import {{ package_name }}
+from {{ package_name }}.{{ package_name }} import EVAL_VERSION, SAMPLE_RECORDS, record_to_sample
 
 
 def test_record_to_sample() -> None:

@@ -73,7 +73,8 @@ exclude = [".venv", "agent_artefacts", "build"]
 line-length = 100
 src = ["src"]
 target-version = "py{{ python_version | replace('.', '') }}"
-extend-exclude = ["agent_artefacts"]
+# *.md: ruff formats Python blocks in Markdown, and the README generator writes them its own way.
+extend-exclude = ["agent_artefacts", "*.md"]
 
 [tool.ruff.lint]
 select = [

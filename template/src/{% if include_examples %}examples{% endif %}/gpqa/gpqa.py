@@ -28,12 +28,11 @@ inspect eval examples/gpqa_diamond -T subdomain=Genetics
 from importlib import resources
 from typing import Any, Literal, get_args
 
+import yaml
 from inspect_ai import Task, task
 from inspect_ai.dataset import Dataset, Sample, csv_dataset
 from inspect_ai.scorer import choice
 from inspect_ai.solver import multiple_choice
-
-import yaml
 
 GPQA_DIAMOND_DATASET_URL = (
     "https://openaipublic.blob.core.windows.net/simple-evals/gpqa_diamond.csv"
@@ -58,6 +57,7 @@ GPQASubdomain = Literal[
     "Quantum Mechanics",
     "Relativistic Mechanics",
 ]
+
 
 def _eval_version() -> str:
     text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
@@ -87,9 +87,7 @@ def get_gpqa_diamond_dataset(
     Returns:
         Dataset of GPQA Diamond samples.
     """
-    domains = (
-        [high_level_domain] if isinstance(high_level_domain, str) else high_level_domain
-    )
+    domains = [high_level_domain] if isinstance(high_level_domain, str) else high_level_domain
     subdomains = [subdomain] if isinstance(subdomain, str) else subdomain
 
     valid_domains = set(get_args(GPQADomain))
@@ -106,14 +104,11 @@ def get_gpqa_diamond_dataset(
         invalid = set(subdomains) - valid_subdomains
         if invalid:
             raise ValueError(
-                f"Invalid subdomain value(s): {invalid}. "
-                f"Must be one of: {sorted(valid_subdomains)}"
+                f"Invalid subdomain value(s): {invalid}. Must be one of: {sorted(valid_subdomains)}"
             )
 
     domain_filter_set: set[str] | None = set(domains) if domains is not None else None
-    subdomain_filter_set: set[str] | None = (
-        set(subdomains) if subdomains is not None else None
-    )
+    subdomain_filter_set: set[str] | None = set(subdomains) if subdomains is not None else None
 
     dataset = csv_dataset(
         csv_file=GPQA_DIAMOND_DATASET_URL,
@@ -130,8 +125,7 @@ def get_gpqa_diamond_dataset(
     if subdomain_filter_set is not None:
         dataset = dataset.filter(
             lambda sample: (
-                sample.metadata is not None
-                and sample.metadata["subdomain"] in subdomain_filter_set
+                sample.metadata is not None and sample.metadata["subdomain"] in subdomain_filter_set
             )
         )
     if len(dataset) == 0:

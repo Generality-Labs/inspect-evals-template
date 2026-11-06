@@ -49,9 +49,7 @@ DATASET = [
         id="ds_binary_search",
     ),
     Sample(
-        input=(
-            "Describe the CAP theorem and its implications for distributed systems."
-        ),
+        input=("Describe the CAP theorem and its implications for distributed systems."),
         target=(
             "The CAP theorem states that a distributed system cannot simultaneously "
             "guarantee all three of: Consistency (all nodes see the same data), "

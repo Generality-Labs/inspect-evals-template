@@ -1,0 +1,78 @@
+# Latest Python version we support — keeps hook envs consistent.
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+      - id: check-added-large-files
+        exclude: ^uv\.lock$ # inspect_ai's dependency tree puts the lock past the 500 KB default
+      - id: check-json
+      - id: check-yaml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: end-of-file-fixer
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: b7359babf83a050dcd7bf892538f3df09c3d4ba6 # 0.11.29
+    hooks:
+      - id: uv-lock # keep uv.lock in sync with pyproject.toml
+
+  # Ruff runs through `uv run --locked`, so pre-commit and command-line checks
+  # use the version pinned in pyproject.toml and uv.lock, and Dependabot bumps
+  # it through the dev dependencies rather than a second pin here.
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --locked ruff check --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        args: [--fix]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --locked ruff format --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
+    hooks:
+      - id: actionlint # GitHub Actions correctness (complements zizmor's security audits)
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: e3eebf65325ccc992422292cb7a4baee967cf815 # v1.26.1
+    hooks:
+      # Several of zizmor's audits (artipacked, impostor-commit,
+      # known-vulnerable-actions, stale-action-refs, ref-version-mismatch, ...)
+      # need to query the GitHub API for upstream Actions metadata, which isn't
+      # reliably available in every environment this runs in (sandboxes,
+      # restricted networks). Split into two hooks so local runs always get
+      # zizmor's offline coverage (most of its ruleset) without depending on
+      # network access, while CI - which has real network + a real GH_TOKEN -
+      # additionally runs the online-only audits via `--hook-stage manual`.
+      # `--persona=auditor` is zizmor's most thorough mode; findings at any
+      # severity fail the run.
+      - id: zizmor
+        name: zizmor (offline checks)
+        args: [--no-online-audits, --persona=auditor]
+      - id: zizmor
+        name: zizmor (online checks - GitHub API, CI only)
+        args: [--persona=auditor]
+        stages: [manual]
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 82912cdaea4fb830f751504486a7879c70526547 # 1.0.0
+    hooks:
+      - id: mdformat
+        # Formatting config (wrap, number, ...) lives in .mdformat.toml.
+        # README.md files hold sections written by `inspect-evals-readmes`, which
+        # compares them byte for byte; mdformat's blank lines around the section
+        # tags would make `generate --check` fail, so READMEs are left to the
+        # generator.
+        exclude: (^|/)README\.md$
+        additional_dependencies:
+          - mdformat-gfm # padded/aligned tables + GFM extensions (task lists, strikethrough)
