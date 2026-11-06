@@ -7,3 +7,38 @@ rules:
       policies:
         "Generality-Labs/*": ref-pin
         "*": hash-pin
+{% if use_claude_review %}
+  # claude-review.yaml and its composite action predate this zizmor stack. The
+  # workflow runs on pull_request_target by design (it reviews pull requests from
+  # forks), and its github-script steps interpolate event data. A proper audit
+  # is tracked on inspect-evals-template; until then these audits skip it.
+  # unpinned-uses is not in the list: every action in both files is SHA-pinned.
+  dangerous-triggers:
+    ignore:
+      - claude-review.yaml
+  template-injection:
+    ignore:
+      - claude-review.yaml
+  github-env:
+    ignore:
+      - claude-review.yaml
+  excessive-permissions:
+    ignore:
+      - claude-review.yaml
+  secrets-outside-env:
+    ignore:
+      - claude-review.yaml
+  artipacked:
+    ignore:
+      - claude-review.yaml
+      - action.yaml
+  anonymous-definition:
+    ignore:
+      - claude-review.yaml
+  concurrency-limits:
+    ignore:
+      - claude-review.yaml
+  self-repository:
+    ignore:
+      - claude-review.yaml
+{% endif %}

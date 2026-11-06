@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Validate trigger
         id: validate
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const eventName = context.eventName;
@@ -79,7 +79,7 @@ jobs:
 
       - name: Checkout code
         if: steps.validate.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ format('refs/pull/{0}/head', env.PR_NUMBER) }}
           fetch-depth: 0 # Fetch all history so merge-base can be found
@@ -90,8 +90,8 @@ jobs:
         run: |
           BASE_REF=$(gh pr view ${{ env.PR_NUMBER }} --json baseRefName -q .baseRefName)
           PR_AUTHOR=$(gh pr view ${{ env.PR_NUMBER }} --json author -q .author.login)
-          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
-          echo "PR_AUTHOR=$PR_AUTHOR" >> $GITHUB_ENV
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+          echo "PR_AUTHOR=$PR_AUTHOR" >> "$GITHUB_ENV"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -118,9 +118,9 @@ jobs:
           # For pull_request_target events, the actor is the PR author.
           # For issue_comment (/review), the actor is the commenter.
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
+            echo "actor=${{ github.actor }}" >> "$GITHUB_OUTPUT"
           else
-            echo "actor=$PR_AUTHOR" >> $GITHUB_OUTPUT
+            echo "actor=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check if actor should be rate-limited
@@ -132,9 +132,9 @@ jobs:
             --jq '.permission' 2>/dev/null || echo "none")
           echo "Actor $ACTOR has permission: $PERM"
           if [[ "$PERM" == "admin" || "$PERM" == "write" ]]; then
-            echo "should_rate_limit=false" >> $GITHUB_OUTPUT
+            echo "should_rate_limit=false" >> "$GITHUB_OUTPUT"
           else
-            echo "should_rate_limit=true" >> $GITHUB_OUTPUT
+            echo "should_rate_limit=true" >> "$GITHUB_OUTPUT"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -193,17 +193,17 @@ jobs:
             PIVOT_INDEX=$((FULL_REVIEW_COUNT - 6))
             PIVOT_CREATED="${FULL_REVIEW_CREATED_ATS[$PIVOT_INDEX]}"
             RETRY_AFTER=$(date -u -d "$PIVOT_CREATED + 1 hour" +%H:%M)
-            echo "rate_limited=true" >> $GITHUB_OUTPUT
-            echo "retry_after=$RETRY_AFTER" >> $GITHUB_OUTPUT
+            echo "rate_limited=true" >> "$GITHUB_OUTPUT"
+            echo "retry_after=$RETRY_AFTER" >> "$GITHUB_OUTPUT"
           else
-            echo "rate_limited=false" >> $GITHUB_OUTPUT
+            echo "rate_limited=false" >> "$GITHUB_OUTPUT"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Handle rate limit exceeded
         if: steps.rate-limit.outputs.rate_limited == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -248,7 +248,7 @@ jobs:
         if: >-
           steps.validate.outputs.skip != 'true'
           && steps.rate-limit.outputs.rate_limited != 'true'
-        run: echo "proceed=true" >> $GITHUB_OUTPUT
+        run: echo "proceed=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup
         if: steps.gate.outputs.proceed == 'true'
@@ -262,7 +262,7 @@ jobs:
       - name: Precompute PR diff and metadata
         if: steps.gate.outputs.proceed == 'true'
         run: |
-          MERGE_BASE=$(git merge-base origin/$BASE_REF HEAD)
+          MERGE_BASE=$(git merge-base "origin/$BASE_REF" HEAD)
           echo "Merge base: $MERGE_BASE"
           git diff --name-only "$MERGE_BASE" HEAD > /tmp/PR_CHANGED_FILES.txt
           git diff "$MERGE_BASE" HEAD > /tmp/PR_DIFF.patch
@@ -276,7 +276,7 @@ jobs:
 
       - name: Fetch previous review comments
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUM: ${{ env.PR_NUMBER }}
         with:
@@ -358,7 +358,7 @@ jobs:
 
       - name: Fetch reviewer feedback
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUM: ${{ env.PR_NUMBER }}
         with:
@@ -542,7 +542,7 @@ jobs:
 
       - name: Hide Previous Claude Review Comments
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -579,7 +579,7 @@ jobs:
 
       - name: Post PR Review Comment
         if: steps.gate.outputs.proceed == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

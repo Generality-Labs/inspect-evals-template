@@ -204,3 +204,11 @@ def test_examples_follow_the_answers(rendered: Rendered) -> None:
     assert (examples / "llm_judge/llm_judge.py").exists() == wants_judge
     assert (tests / "test_llm_judge.py").exists() == wants_judge
     assert not (examples / "simple_qa").exists()
+
+
+def test_claude_review_present_only_when_asked(rendered: Rendered) -> None:
+    wants = bool(rendered.answers.get("use_claude_review", False))
+    assert (rendered.path / ".github/workflows/claude-review.yaml").exists() == wants
+    assert (rendered.path / ".github/actions/claude-setup/action.yaml").exists() == wants
+    zizmor = (rendered.path / ".github/zizmor.yml").read_text()
+    assert ("claude-review.yaml" in zizmor) == wants
