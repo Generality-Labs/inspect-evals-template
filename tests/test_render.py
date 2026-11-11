@@ -336,13 +336,44 @@ def test_gpqa_tests_that_download_carry_the_marker(synced: Rendered) -> None:
     assert "3 passed, 6 skipped" in result.stdout
 
 
-def test_docs_say_when_a_test_needs_the_huggingface_marker(rendered: Rendered) -> None:
-    # huggingface tests are skipped without HF_TOKEN, and CI passes no secrets to
-    # pytest, so a public dataset's tests need dataset_download to run at all.
+def test_docs_say_huggingface_tests_run_without_a_token(rendered: Rendered) -> None:
     for doc in ("CONTRIBUTING.md", "AGENTS.md"):
         text = (rendered.path / doc).read_text()
-        assert "gated or private" in text, doc
-        assert "HF_TOKEN" in text, doc
+        assert "calls the Hugging Face Hub" in text, doc
+        assert "run when `HF_TOKEN` is unset" in text, doc
+        assert "skipped when `HF_TOKEN` is unset" not in text, doc
+        assert "skipped without `HF_TOKEN`" not in text, doc
+
+
+HF_MARKED_TEST = """\
+import pytest
+
+
+@pytest.mark.huggingface
+def test_marked_huggingface() -> None:
+    pass
+"""
+
+
+def test_huggingface_tests_run_without_a_token(synced: Rendered) -> None:
+    # CI passes no HF_TOKEN to pytest, so a huggingface test has to run without one.
+    probe = synced.path / "tests/test_huggingface_marker_probe.py"
+    probe.write_text(HF_MARKED_TEST)
+    try:
+        result = run(
+            synced.path,
+            "uv",
+            "run",
+            "pytest",
+            str(probe.relative_to(synced.path)),
+            "-q",
+            "--color=no",
+            env={"HF_TOKEN": ""},
+        )
+    finally:
+        probe.unlink()
+    assert "1 passed" in result.stdout
+    assert "HF_TOKEN is not set: 1 huggingface test(s) ran without authentication" in result.stdout
 
 
 SHA_PIN = re.compile(r"^[0-9a-f]{40}$")

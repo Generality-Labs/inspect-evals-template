@@ -53,4 +53,5 @@ Two things about versions here:
 - `inspect eval src/<package>/<package>.py` loads the task. The task module reads its version with `load_eval_version(__file__)` from `inspect-evals-utils`, which takes `eval.yaml` from the module's directory. The reader it replaces used `__package__`, which is not the package name when Inspect loads a file by path.
 - `copier update` leaves hand-deleted examples deleted. The `README.md` skip pattern is limited to the repo root, where it also matched `src/examples/gpqa/README.md` and brought that file back.
 - The examples' documented run commands use the file-path form (`inspect eval src/examples/gpqa/gpqa.py`). The package form found no tasks because the examples have no entry point.
-- The three gpqa tests that build the task carry `dataset_download`. `CONTRIBUTING.md` and `AGENTS.md` say that `huggingface` is for gated or private datasets, because those tests are skipped without `HF_TOKEN`.
+- The three gpqa tests that build the task carry `dataset_download`.
+- Tests marked `huggingface` run when `HF_TOKEN` is unset, which is the case in CI. `pytest-inspect-evals` 0.4.0 runs them and prints a notice in the test summary, where 0.3.0 skipped them. `CONTRIBUTING.md` and `AGENTS.md` say that the marker is for any test that calls the Hugging Face Hub.
