@@ -24,6 +24,7 @@ Two things about versions here:
 - `gpqa` reads its version from `eval.yaml` with a five-line reader; `src/utils/` is gone.
 - The eval's `pyproject.toml` has a static `version`; the task version stays in `eval.yaml`.
 - The skills come from the `inspect-evals` plugin in [Generality-Labs/agent-skills](https://github.com/Generality-Labs/agent-skills), enabled through `.claude/settings.json` for Claude Code and installable in Codex and other agents.
+- `claude-review.yaml` and its `claude-setup` action (the `use_claude_review` option) are copied from inspect_evals at commit `d2b662494b`. The generated `.github/zizmor.yml` skips three zizmor audits for the workflow instead of nine and gives a reason for each. The default Bedrock model is `global.anthropic.claude-fable-5-1`, and Dependabot pull requests get a review only when a maintainer comments `/review`.
 
 ### Added
 
