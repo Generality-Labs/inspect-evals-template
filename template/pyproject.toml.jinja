@@ -12,8 +12,7 @@ authors = [{ name = {{ author_name | to_json(ensure_ascii=False) }}, email = {{ 
 requires-python = ">={{ python_version }}"
 dependencies = [
     "inspect_ai>=0.3.262",
-    "inspect-evals-utils[huggingface]==0.1.0",
-    "pyyaml>=6",
+    "inspect-evals-utils[huggingface]==0.3.0",
 ]
 
 [project.urls]
@@ -38,7 +37,7 @@ dev = [
     "pytest>=8.4",
     "pytest-asyncio",
     "pytest-dotenv",
-    "pytest-inspect-evals[huggingface]==0.3.0",
+    "pytest-inspect-evals[huggingface]==0.4.0",
     "pytest-mock",
     "ruff==0.17.4",
 ]

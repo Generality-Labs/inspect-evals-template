@@ -2,24 +2,16 @@
 {% set python_description = eval_description | replace('\\', '\\u005c') | replace('"', '\\u0022') %}
 """{{ python_description }}"""
 
-from pathlib import Path
 from typing import Any
 
-import yaml
 from inspect_ai import Task, task
 from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.scorer import match
 from inspect_ai.solver import generate
+from inspect_evals_utils.metadata import load_eval_version
 
-
-def _eval_version() -> str:
-    # Read next to this file: Inspect also loads the module by file path, where
-    # __package__ does not name the package.
-    text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
-    return str(yaml.safe_load(text)["version"])
-
-
-EVAL_VERSION = _eval_version()
+# The version comes from eval.yaml, the file beside this module.
+EVAL_VERSION = load_eval_version(__file__)
 
 # Stands in for the benchmark's dataset. Replace it with a loader: see
 # inspect_evals_utils.datasets for cached JSON and CSV files and

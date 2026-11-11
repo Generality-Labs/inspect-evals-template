@@ -38,22 +38,7 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
 
 1. Replace the helper imports:
 
-   - `from utils.metadata import load_version_from_yaml` and `EVAL_VERSION = load_version_from_yaml("my_eval")` become a reader in the task module:
-
-     ```python
-     from pathlib import Path
-
-     import yaml
-
-
-     def _eval_version() -> str:
-         text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
-         return str(yaml.safe_load(text)["version"])
-
-
-     EVAL_VERSION = _eval_version()
-     ```
-
+   - `from utils.metadata import load_version_from_yaml` and `EVAL_VERSION = load_version_from_yaml("my_eval")` become `from inspect_evals_utils.metadata import load_eval_version` and `EVAL_VERSION = load_eval_version(__file__)`. The new reader takes the module's file path where the old one took the package name.
    - `from utils.sample_ids import create_stable_id` becomes `from inspect_evals_utils.ids import create_stable_id`.
    - `from utils.huggingface import ...` becomes `from inspect_evals_utils.huggingface import ...`.
    - Test helpers come from `pytest_inspect_evals.assertions` (`assert_eval_success`, `assert_task_structure`, `run_single_sample_eval`).
