@@ -17,7 +17,6 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
    layout: multi-eval
    include_examples: false
    include_llm_judge_example: false
-   use_claude_review: false
    use_template_update: true
    license: MIT
    ```
@@ -34,7 +33,7 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
 
 1. Review `git diff pyproject.toml` and put back your dependencies and entry point; keep the template's dependency groups and tool tables.
 
-1. Delete the v1.x files copier leaves behind: `MANAGED_FILES.md`, `.template-version`, `.template-sync-sha`, `.github/workflows/sync-template.yml`, `.github/workflows/sync-upstream.yml`, `.github/workflows/checks.yml`, `.github/workflows/pr-template-check.yml`, `.github/workflows/markdown-lint.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `.markdownlint.yaml`, `.markdownlintignore`, `tools/`, `tests/test_*.py` for the tools, `src/utils/`, `.claude/skills/`, `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` and `src/examples/simple_qa/`.
+1. Delete the v1.x files copier leaves behind: `MANAGED_FILES.md`, `.template-version`, `.template-sync-sha`, `.github/workflows/sync-template.yml`, `.github/workflows/sync-upstream.yml`, `.github/workflows/checks.yml`, `.github/workflows/pr-template-check.yml`, `.github/workflows/markdown-lint.yml`, `.github/workflows/claude-review.yaml`, `.github/actions/claude-setup/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.markdownlint.yaml`, `.markdownlintignore`, `tools/`, `tests/test_*.py` for the tools, `src/utils/`, `.claude/skills/`, `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` and `src/examples/simple_qa/`.
 
 1. Replace the helper imports:
 
