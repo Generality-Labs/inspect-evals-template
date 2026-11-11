@@ -10,8 +10,10 @@ _envops:
 
 # The author's eval, its tests and the repo README are never overwritten by
 # `copier update`; everything else is a managed copy that updates refresh.
+# The leading slash limits the README pattern to the repo root: copier re-creates
+# a missing skip-if-exists file, which would bring back the README of a deleted example.
 _skip_if_exists:
-  - README.md
+  - /README.md
   - "src/{{ package_name }}/"
   - "tests/{{ package_name }}/"
   - "tests/test_{{ package_name }}.py"
