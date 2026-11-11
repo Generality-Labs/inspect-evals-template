@@ -32,6 +32,8 @@ Two things about versions here:
 - `AGENTS.md` (with `CLAUDE.md` pointing at it) and a short `CONTRIBUTING.md`.
 - `docs/MIGRATING.md` for repos created from v1.x.
 - Questions `github_username`, `layout`, `include_examples`, `include_llm_judge_example`, `use_claude_review`, `use_template_update`, `license`.
+- The `anthropic` and `openai` SDKs in the dev dependencies, so the `--model` commands in the generated READMEs run after `uv sync`.
+- An Examples section in the generated README, with a run command for each example and the `copier update --defaults --data include_examples=false` command that removes them.
 
 ### Removed
 
@@ -48,3 +50,7 @@ Two things about versions here:
 - Creation preserves quotes, backslashes and Unicode in descriptions and author details, and rejects Python keywords and reserved template package names.
 - Pre-commit's Python hooks use the selected `python_version`.
 - The first v2 release creates the `v2` tag; subsequent releases update it. A failed tag lookup stops the workflow before it writes a ref.
+- `inspect eval src/<package>/<package>.py` loads the task. The version reader takes `eval.yaml` from the module's directory, where it used `__package__`, which is not the package name when Inspect loads a file by path.
+- `copier update` leaves hand-deleted examples deleted. The `README.md` skip pattern is limited to the repo root, where it also matched `src/examples/gpqa/README.md` and brought that file back.
+- The examples' documented run commands use the file-path form (`inspect eval src/examples/gpqa/gpqa.py`). The package form found no tasks because the examples have no entry point.
+- The three gpqa tests that build the task carry `dataset_download`. `CONTRIBUTING.md` and `AGENTS.md` say that `huggingface` is for gated or private datasets, because those tests are skipped without `HF_TOKEN`.
