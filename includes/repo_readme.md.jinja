@@ -31,7 +31,7 @@ tests/{{ package_name }}/      its tests
 tests/test_{{ package_name }}.py   its tests
 {% endif %}
 {% if include_examples %}
-src/examples/            gpqa, agentic{% if include_llm_judge_example %}, llm_judge{% endif %}: worked examples, delete them once your eval works
+src/examples/            gpqa, agentic{% if include_llm_judge_example %}, llm_judge{% endif %}: worked examples, see Examples below
 tests/examples/          their tests
 {% endif %}
 agent_artefacts/trajectory_analysis/inspect_scout/   Scout scanners for the transcript audit
@@ -50,6 +50,8 @@ uv run inspect eval src/examples/agentic/agentic.py -T agent=claude_code   # Cla
 uv run inspect eval src/examples/llm_judge/llm_judge.py
 {% endif %}
 ```
+
+When your eval works, commit your changes and remove the examples with `uvx copier update --defaults --data include_examples=false`, then run `uv sync`. The update deletes `src/examples/` and `tests/examples/`, drops the `inspect-swe` dev dependency and the examples line in `AGENTS.md`, and applies any newer template release. An update never changes `README.md`, so delete this section and the two examples lines under Layout by hand.
 
 {% endif %}
 ## Skills

@@ -84,7 +84,7 @@ layout:
 
 include_examples:
   type: bool
-  help: Include the example evals (gpqa, agentic) under src/examples/? Delete them once your eval works.
+  help: Include the example evals (gpqa, agentic) under src/examples/? `copier update --defaults --data include_examples=false` removes them later.
   default: true
 
 include_llm_judge_example:

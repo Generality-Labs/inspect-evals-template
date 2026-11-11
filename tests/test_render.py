@@ -288,6 +288,25 @@ def test_readme_gives_a_run_command_for_each_example(rendered: Rendered) -> None
         assert "src/examples" not in readme
 
 
+REMOVE_EXAMPLES = "copier update --defaults --data include_examples=false"
+
+
+def test_docs_give_the_copier_route_for_removing_examples(rendered: Rendered) -> None:
+    # tests/test_update.py runs this route. Deleting the folders by hand leaves the
+    # inspect-swe dependency and the AGENTS.md line behind.
+    readme = (rendered.path / "README.md").read_text()
+    agents = (rendered.path / "AGENTS.md").read_text()
+    if rendered.answers.get("include_examples", True):
+        assert REMOVE_EXAMPLES in readme
+        assert REMOVE_EXAMPLES in agents
+        assert "delete them once" not in readme
+    else:
+        assert "include_examples" not in readme
+        assert "include_examples" not in agents
+    help_text = yaml.safe_load((ROOT / "copier.yml").read_text())["include_examples"]["help"]
+    assert REMOVE_EXAMPLES in help_text
+
+
 SHA_PIN = re.compile(r"^[0-9a-f]{40}$")
 
 
