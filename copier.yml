@@ -93,11 +93,6 @@ include_llm_judge_example:
   default: false
   when: "{{ include_examples }}"
 
-use_claude_review:
-  type: bool
-  help: Add the Claude Code review workflow? (reviews through AWS Bedrock; needs an ANTHROPIC_ROLE_ARN secret for OIDC and the AUTO_REVIEW_ALL_COMMITS variable)
-  default: false
-
 use_template_update:
   type: bool
   # Adds a scheduled workflow that runs `copier update` and opens a PR when the
