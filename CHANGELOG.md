@@ -11,7 +11,7 @@ Two things about versions here:
 
 ## [Unreleased]
 
-## [2.0.0] - 2026-11-XX
+## [2.0.0] - 2026-11-11
 
 ### Changed
 
