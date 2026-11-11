@@ -16,7 +16,7 @@ Two things about versions here:
 ### Changed
 
 - The template is a [copier](https://copier.readthedocs.io/) template. Repos are created with `uvx copier copy gh:Generality-Labs/inspect-evals-template my-eval`, record their answers in `.copier-answers.yml`, and receive template changes through `copier update` (weekly, by `template-update.yml`) instead of the sync workflows.
-- Shared code comes from packages: `inspect-evals-utils` (dataset loaders, Hugging Face wrappers, ids, the README generator as `inspect-evals-readmes`), `pytest-inspect-evals` (test gates, markers, fixtures, assertions) and `inspect-evals-lint`.
+- Shared code comes from packages: `inspect-evals-utils` (dataset loaders, Hugging Face wrappers, ids, the `eval.yaml` version reader, the README generator as `inspect-evals-readmes`), `pytest-inspect-evals` (test gates, markers, fixtures, assertions) and `inspect-evals-lint`.
 - CI calls python-project-template's `python-ci.yml@v1` (ruff, basedpyright, pytest, pre-commit) plus a new `eval-checks.yml` (inspect-evals-lint and the README check). The pre-commit stack is python-project-template's (ruff through `uv run --locked`, uv-lock, actionlint, zizmor, mdformat).
 - basedpyright in standard mode replaces mypy.
 - A `layout` question picks the `multi-eval` or `single-eval` inspect-evals-lint layout, so an existing repo adopts the template without moving files.
@@ -50,7 +50,7 @@ Two things about versions here:
 - Creation preserves quotes, backslashes and Unicode in descriptions and author details, and rejects Python keywords and reserved template package names.
 - Pre-commit's Python hooks use the selected `python_version`.
 - The first v2 release creates the `v2` tag; subsequent releases update it. A failed tag lookup stops the workflow before it writes a ref.
-- `inspect eval src/<package>/<package>.py` loads the task. The version reader takes `eval.yaml` from the module's directory, where it used `__package__`, which is not the package name when Inspect loads a file by path.
+- `inspect eval src/<package>/<package>.py` loads the task. The task module reads its version with `load_eval_version(__file__)` from `inspect-evals-utils`, which takes `eval.yaml` from the module's directory. The reader it replaces used `__package__`, which is not the package name when Inspect loads a file by path.
 - `copier update` leaves hand-deleted examples deleted. The `README.md` skip pattern is limited to the repo root, where it also matched `src/examples/gpqa/README.md` and brought that file back.
 - The examples' documented run commands use the file-path form (`inspect eval src/examples/gpqa/gpqa.py`). The package form found no tasks because the examples have no entry point.
 - The three gpqa tests that build the task carry `dataset_download`. `CONTRIBUTING.md` and `AGENTS.md` say that `huggingface` is for gated or private datasets, because those tests are skipped without `HF_TOKEN`.

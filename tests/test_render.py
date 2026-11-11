@@ -238,6 +238,17 @@ def test_docs_name_model_providers_whose_sdk_is_installed(synced: Rendered) -> N
         run(synced.path, "uv", "run", "python", "-c", f"import {provider}")
 
 
+def test_task_modules_read_the_version_with_the_shared_reader(rendered: Rendered) -> None:
+    modules = [p for p in rendered.path.glob("src/**/*.py") if "EVAL_VERSION =" in p.read_text()]
+    assert modules
+    for module in modules:
+        text = module.read_text()
+        assert "EVAL_VERSION = load_eval_version(__file__)" in text, module
+        assert "import yaml" not in text, module
+    pyproject = tomllib.loads((rendered.path / "pyproject.toml").read_text())
+    assert not [d for d in pyproject["project"]["dependencies"] if d.startswith("pyyaml")]
+
+
 def test_skeleton_runs_by_file_path(synced: Rendered, tmp_path: Path) -> None:
     # Inspect loads a task file given by path outside its package, so the module
     # cannot use __package__ to find eval.yaml.

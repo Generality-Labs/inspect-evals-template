@@ -28,14 +28,13 @@ inspect eval src/examples/gpqa/gpqa.py -T high_level_domain=Biology
 inspect eval src/examples/gpqa/gpqa.py -T subdomain=Genetics
 """
 
-from pathlib import Path
 from typing import Any, Literal, get_args
 
-import yaml
 from inspect_ai import Task, task
 from inspect_ai.dataset import Dataset, Sample, csv_dataset
 from inspect_ai.scorer import choice
 from inspect_ai.solver import multiple_choice
+from inspect_evals_utils.metadata import load_eval_version
 
 GPQA_DIAMOND_DATASET_URL = (
     "https://openaipublic.blob.core.windows.net/simple-evals/gpqa_diamond.csv"
@@ -61,15 +60,8 @@ GPQASubdomain = Literal[
     "Relativistic Mechanics",
 ]
 
-
-def _eval_version() -> str:
-    # Read next to this file: Inspect also loads the module by file path, where
-    # __package__ does not name the package.
-    text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
-    return str(yaml.safe_load(text)["version"])
-
-
-EVAL_VERSION = _eval_version()
+# The version comes from eval.yaml, the file beside this module.
+EVAL_VERSION = load_eval_version(__file__)
 
 
 def get_gpqa_diamond_dataset(
