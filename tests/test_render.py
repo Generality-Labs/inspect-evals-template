@@ -307,6 +307,33 @@ def test_docs_give_the_copier_route_for_removing_examples(rendered: Rendered) ->
     assert REMOVE_EXAMPLES in help_text
 
 
+def test_gpqa_tests_that_download_carry_the_marker(synced: Rendered) -> None:
+    if not synced.answers.get("include_examples", True):
+        pytest.skip("this answer set has no examples")
+    # Building the task downloads the CSV, so with the gate off only the three
+    # tests that never build it may run.
+    result = run(
+        synced.path,
+        "uv",
+        "run",
+        "pytest",
+        "tests/examples/test_gpqa.py",
+        "-q",
+        "--color=no",
+        env={"RUN_DATASET_DOWNLOAD_TESTS": "0"},
+    )
+    assert "3 passed, 6 skipped" in result.stdout
+
+
+def test_docs_say_when_a_test_needs_the_huggingface_marker(rendered: Rendered) -> None:
+    # huggingface tests are skipped without HF_TOKEN, and CI passes no secrets to
+    # pytest, so a public dataset's tests need dataset_download to run at all.
+    for doc in ("CONTRIBUTING.md", "AGENTS.md"):
+        text = (rendered.path / doc).read_text()
+        assert "gated or private" in text, doc
+        assert "HF_TOKEN" in text, doc
+
+
 SHA_PIN = re.compile(r"^[0-9a-f]{40}$")
 
 

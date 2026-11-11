@@ -72,6 +72,7 @@ def test_constants() -> None:
     assert GPQA_DIAMOND_DATASET_URL.startswith("https://")
 
 
+@pytest.mark.dataset_download
 def test_gpqa_diamond_task_structure() -> None:
     """Test that the gpqa_diamond task has the expected structure."""
     task = gpqa_diamond()
@@ -80,12 +81,14 @@ def test_gpqa_diamond_task_structure() -> None:
     assert task.epochs == DEFAULT_EPOCHS
 
 
+@pytest.mark.dataset_download
 def test_gpqa_diamond_with_cot_false() -> None:
     """Test that cot=False parameter is respected."""
     task = gpqa_diamond(cot=False)
     assert task.solver is not None
 
 
+@pytest.mark.dataset_download
 def test_gpqa_diamond_custom_epochs() -> None:
     """Test that custom epochs parameter is respected."""
     task = gpqa_diamond(epochs=2)

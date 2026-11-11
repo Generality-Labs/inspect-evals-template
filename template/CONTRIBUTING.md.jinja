@@ -13,7 +13,10 @@
 | `huggingface`      | yes             | skipped without `HF_TOKEN`; retried twice                  |
 | `posix_only`       | yes             | skipped on Windows                                         |
 
-Use `mockllm/model` for model output in tests, `unittest.mock` for external services and `tmp_path` for files. A test that reaches the network needs the `dataset_download` or `huggingface` marker.
+Use `mockllm/model` for model output in tests, `unittest.mock` for external services and `tmp_path` for files. A test that reaches the network needs a marker:
+
+- `dataset_download` for a test that downloads a dataset, including a public Hugging Face dataset. These tests run locally and in CI without a token.
+- `huggingface` as well when the test needs a Hugging Face token, which is the case for a gated or private dataset. These tests are skipped when `HF_TOKEN` is unset. CI does not pass `HF_TOKEN` to pytest, because the shared `python-ci.yml` workflow takes no secrets, so they run on a machine that has the token in its environment or in `.env`.
 
 ## Checks
 

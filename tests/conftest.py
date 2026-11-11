@@ -69,9 +69,16 @@ def clean_env() -> dict[str, str]:
     }
 
 
-def run(path: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+def run(
+    path: Path, *args: str, check: bool = True, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
-        args, cwd=path, env=clean_env(), text=True, capture_output=True, check=False
+        args,
+        cwd=path,
+        env={**clean_env(), **(env or {})},
+        text=True,
+        capture_output=True,
+        check=False,
     )
     if check and result.returncode != 0:
         raise AssertionError(
