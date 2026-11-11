@@ -41,3 +41,6 @@ agent_artefacts/trajectory_analysis/inspect_scout/__pycache__/
 
 # uv
 .python-version
+
+# worktrees
+.worktrees/

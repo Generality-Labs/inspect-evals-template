@@ -1,0 +1,61 @@
+name: Template CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: template-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Render four answer sets and run their checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+      - name: Install the test harness
+        run: uv sync --locked
+      # The harness copies copier.yml, template/ and includes/ to a temp
+      # directory without .git before rendering, so the checkout under test is
+      # the working tree, not the latest tag (copier renders a git repo's HEAD).
+      - name: Render and check
+        run: uv run pytest -q
+
+  docker:
+    name: Run the agentic example in Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+      - name: Install the test harness
+        run: uv sync --locked
+      - name: Render and run the docker test
+        run: uv run pytest -q --runslow -m docker
+
+  zizmor:
+    name: Audit the template's own workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: zizmor
+        env:
+          GH_TOKEN: ${{ github.token }} # lets the online audits query the GitHub API
+        run: uvx zizmor --persona=auditor .github

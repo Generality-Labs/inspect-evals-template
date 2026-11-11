@@ -1,0 +1,41 @@
+# Contributing to {{ eval_name }}
+
+## Running tests
+
+`make test` runs the test suite. The test gates, markers and fixtures come from the [pytest-inspect-evals](https://github.com/Generality-Labs/pytest-inspect-evals) plugin.
+
+| Marker             | Runs by default | Enable with                                                |
+| ------------------ | --------------- | ---------------------------------------------------------- |
+| `slow`             | no              | `uv run pytest --runslow` or `RUN_SLOW_TESTS=1`            |
+| `dataset_download` | yes, here       | `--dataset-download`; `RUN_DATASET_DOWNLOAD_TESTS=0` skips |
+| `gpu`              | no              | `uv run pytest --rungpu` or `RUN_GPU_TESTS=1`              |
+| `docker`           | yes             | skipped on Windows                                         |
+| `huggingface`      | yes             | retried twice; a summary notice when `HF_TOKEN` is unset   |
+| `posix_only`       | yes             | skipped on Windows                                         |
+
+Use `mockllm/model` for model output in tests, `unittest.mock` for external services and `tmp_path` for files. A test that reaches the network needs a marker:
+
+- `dataset_download` for a test that downloads a dataset.
+- `huggingface` for a test that calls the Hugging Face Hub. A test that downloads a dataset from the Hub carries both markers. The plugin retries a failed `huggingface` test twice and reports a gated-dataset error as a skip.
+
+Tests marked `huggingface` run when `HF_TOKEN` is unset, and the test summary then says how many ran without authentication. CI does not pass `HF_TOKEN` to pytest, because the shared `python-ci.yml` workflow takes no secrets. A public dataset needs no token. A test that needs a private dataset fails in CI, and passes on a machine that has the token in its environment or in `.env`.
+
+## Checks
+
+`make check` runs the checks CI runs:
+
+- `ruff check` and `ruff format --check`
+- `basedpyright src tests` in standard mode
+- `inspect-evals-lint --all` (the rules are documented one per page at [inspect-evals-lint](https://github.com/Generality-Labs/inspect-evals-lint/tree/main/docs/rules))
+- `inspect-evals-readmes generate --check`, which fails when the README sections generated from `eval.yaml` and the task signatures are out of date (`make readmes` regenerates them)
+- `pre-commit run --all-files` (zizmor, actionlint, mdformat, uv-lock and the standard hooks)
+
+`uv run pre-commit install` runs the hooks on every commit.
+
+## eval.yaml
+
+`src/{{ package_name }}/eval.yaml` holds the eval's title, description, contributors, version and tasks. The fields are documented in the [eval.yaml reference](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/CONTRIBUTING.md#evalyaml-reference) in inspect_evals. Bump `version` whenever a change can move scores; [TASK_VERSIONING.md](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/TASK_VERSIONING.md) explains the format.
+
+## Submitting to the inspect_evals register
+
+Evals hosted in their own repo are listed in inspect_evals through a metadata entry. Read [register/README.md](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/register/README.md) and open a [Register Eval Submission](https://github.com/UKGovernmentBEIS/inspect_evals/issues/new?template=register-submission.yml) issue when the eval is ready.

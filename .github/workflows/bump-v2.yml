@@ -1,0 +1,196 @@
+name: Bump v2
+
+# Moves the `v2` major tag to a published release, because every consumer pins
+# `--vcs-ref v2` and that tag is what actually ships a change to them.
+#
+# Deliberately NOT triggered on push to main. `v2` is the deploy: moving it on
+# merge would give every consumer the new CI with nothing in between, and the
+# reusable workflows have no coverage beyond the smoke jobs in template-ci.
+# Cutting a release is the point where a human is already exercising judgement,
+# so that is where the tag moves.
+on:
+  release:
+    types: [published]
+  # A release created with the default Actions token raises no release
+  # event; dispatch this workflow with --ref vX.Y.Z in that case. On a
+  # dispatch, github.ref_name is the tag and github.sha its commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bump-v2
+  cancel-in-progress: false # never abandon a half-done tag move
+
+jobs:
+  bump:
+    name: Move v2 to the released commit
+    runs-on: ubuntu-latest
+    # Skip anything that isn't a stable 2.x release: a v3 tag must not drag v2
+    # forward onto a breaking change, and a prerelease is by definition not what
+    # consumers updating from `v2` should receive.
+    if: >-
+      ${{ (github.event_name == 'release'
+            && !github.event.release.prerelease
+            && startsWith(github.event.release.tag_name, 'v2.'))
+          || (github.event_name == 'workflow_dispatch'
+            && github.ref_type == 'tag'
+            && startsWith(github.ref_name, 'v2.')) }}
+    permissions:
+      # Scoped to this job so the rest of the workflow stays read-only.
+      contents: write # move the v2 tag
+    steps:
+      # No checkout on purpose: moving a ref needs the API, not a working copy,
+      # and skipping it avoids persisting credentials on disk for a job that
+      # holds the one token able to rewrite what every consumer runs.
+      - name: Refuse a dispatch on a prerelease or an older tag
+        # The release event path gets these checks from the release itself
+        # (prerelease flag) and from being the release just published. A
+        # dispatch can name any tag, and an older one would move v2 back for
+        # every consumer.
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v2\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::${TAG} is not a final v2.X.Y release tag" >&2
+            exit 1
+          fi
+          newest=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/v2." --jq '.[].ref' \
+            | sed 's#^refs/tags/##' | grep -E '^v2\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          if [ "$TAG" != "$newest" ]; then
+            echo "::error::${TAG} is not the newest v2 release tag (${newest}); v2 only moves forward" >&2
+            exit 1
+          fi
+
+      - name: Refuse to move v2 off main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # compare main...SHA describes SHA relative to main: "identical" when
+          # it is the tip, "behind" when it is an ancestor. Anything else means
+          # the release was cut from a commit that never landed on main, and v2
+          # would start pointing at code no one reviewed there.
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...${RELEASE_SHA}" --jq .status)
+          case "$status" in
+            identical | behind)
+              echo "released commit is contained in main (status: $status)"
+              ;;
+            *)
+              echo "::error::released commit ${RELEASE_SHA} is not contained in main (status: ${status})"
+              exit 1
+              ;;
+          esac
+
+      - name: Require a changelog entry for this release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Fetched rather than checked out, to keep this job free of a working
+          # copy and its credentials. Read at the released commit, not at main,
+          # so a later push can't make a bad release look documented.
+          gh api "repos/${GITHUB_REPOSITORY}/contents/CHANGELOG.md?ref=${RELEASE_SHA}" \
+            --jq .content | base64 -d > /tmp/CHANGELOG.md
+          python3 - "$RELEASE_TAG" /tmp/CHANGELOG.md <<'PY'
+          import re
+          import sys
+
+          tag, path = sys.argv[1], sys.argv[2]
+          version = tag.lstrip("v")
+          text = open(path, encoding="utf-8").read()
+
+          # Split on level-2 headings, keeping each heading with its body. Match
+          # headings by prefix, not equality: a released section is written
+          # "## [1.6.0] - 2026-07-27", so the date is part of the heading line.
+          sections = re.split(r"^## ", text, flags=re.M)[1:]
+          by_heading = {s.split("\n", 1)[0].strip(): s.split("\n", 1)[-1] for s in sections}
+
+          def body_for(prefix: str) -> str | None:
+              for heading, body in by_heading.items():
+                  if heading.startswith(prefix):
+                      return body
+              return None
+
+          if body_for(f"[{version}]") is None:
+              sys.exit(
+                  f"::error::CHANGELOG.md has no '## [{version}]' section. "
+                  f"Releasing {tag} without describing it leaves consumers to read the git log."
+              )
+
+          unreleased = body_for("[Unreleased]") or ""
+          leftover = [ln for ln in unreleased.splitlines() if ln.strip()]
+          if leftover:
+              sys.exit(
+                  "::error::CHANGELOG.md still has entries under [Unreleased], so this "
+                  f"release ships changes it does not describe:\n  " + "\n  ".join(leftover)
+              )
+
+          print(f"changelog documents {version}, and [Unreleased] is empty")
+          PY
+
+      # Runs after every refusal above, so a release that is going to be turned
+      # away never has its tag rewritten.
+      - name: Annotate the release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # The Move step below puts v2 on this same commit, and copier reads a
+          # template's version through dunamai, which takes the commit's newest
+          # tag by date. An annotated tag's date is when it was tagged; a
+          # lightweight tag's is its commit's. With both lightweight they tie on
+          # date and dunamai breaks the tie by name, which picks "v2"; copier
+          # parses that as version 2, and every consumer above 1.0.0 fails
+          # `copier update` with "Downgrades are not supported". Not merely the
+          # scheduled runs: an explicit `--vcs-ref v2.1.0` reads the same commit
+          # and fails identically, which strands the project entirely.
+          #
+          # Publishing a release for a tag that does not exist yet -- the GitHub
+          # UI's default, and `gh release create` without --verify-tag -- makes
+          # that lightweight tag. Give the tag an annotation here so it
+          # outranks v2 and copier reads
+          # "v2.1.0". Annotating v2 too would break it again: v2 is re-tagged on
+          # every release, so it would always be the newer of the two.
+          #
+          # The rewrite keeps the same target commit, and the release references
+          # the tag by name, so the published release is unaffected. It lands
+          # seconds after publication, before the tag has realistically been
+          # fetched anywhere.
+          type=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq .object.type)
+          if [ "$type" = "tag" ]; then
+            echo "${RELEASE_TAG} is already annotated"
+            exit 0
+          fi
+          tag_sha=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/git/tags" \
+            -f tag="${RELEASE_TAG}" -f message="${RELEASE_TAG}" \
+            -f object="${RELEASE_SHA}" -f type=commit --jq .sha)
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${RELEASE_TAG}" \
+            -f sha="${tag_sha}" -F force=true
+          echo "${RELEASE_TAG} annotated as ${tag_sha} (still on ${RELEASE_SHA})"
+
+      - name: Move v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          exists=$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/v2" \
+            --jq 'any(.[]; .ref == "refs/tags/v2")')
+          if [ "$exists" = "true" ]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/v2" \
+              -f sha="${RELEASE_SHA}" -F force=true
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref=refs/tags/v2 -f sha="${RELEASE_SHA}"
+          fi
+          echo "v2 -> ${RELEASE_SHA}"

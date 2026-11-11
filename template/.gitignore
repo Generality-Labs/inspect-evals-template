@@ -1,0 +1,46 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# Local env / secrets: never commit API keys
+.env
+.env.*
+!.env.example
+
+# Claude Code per-user overrides (the shared .claude/settings.json is committed)
+.claude/settings.local.json
+
+# Eval / run output
+logs/
+
+# Agent artefacts: only the Scout scanners are tracked, never their outputs
+agent_artefacts/*
+!agent_artefacts/trajectory_analysis/
+agent_artefacts/trajectory_analysis/*
+!agent_artefacts/trajectory_analysis/inspect_scout/
+agent_artefacts/trajectory_analysis/inspect_scout/scout_results/
+agent_artefacts/trajectory_analysis/inspect_scout/logs/
+agent_artefacts/trajectory_analysis/inspect_scout/__pycache__/
+
+# Editors
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

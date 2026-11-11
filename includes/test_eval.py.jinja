@@ -1,0 +1,25 @@
+from inspect_ai import eval
+from pytest_inspect_evals.assertions import assert_eval_success
+
+from {{ package_name }} import {{ package_name }}
+from {{ package_name }}.{{ package_name }} import EVAL_VERSION, SAMPLE_RECORDS, record_to_sample
+
+
+def test_record_to_sample() -> None:
+    sample = record_to_sample(SAMPLE_RECORDS[0])
+    assert sample.id == "sample-1"
+    assert sample.input == "What is 2 + 2?"
+    assert sample.target == "4"
+
+
+def test_version_comes_from_eval_yaml() -> None:
+    assert EVAL_VERSION == "1-A"
+
+
+def test_end_to_end_with_mock_model() -> None:
+    # mockllm/model returns a fixed string, so the scores exist but are not CORRECT;
+    # this checks the pipeline, not the answer.
+    [log] = eval(tasks={{ package_name }}(), model="mockllm/model")
+    assert_eval_success(log, expected_sample_count=2)
+    assert log.samples is not None
+    assert all(s.scores is not None and "match" in s.scores for s in log.samples)

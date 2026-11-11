@@ -1,0 +1,78 @@
+## Getting started
+
+```bash
+uv sync
+uv run pre-commit install
+uv run inspect eval {{ package_name }}/{{ package_name }} --model anthropic/claude-sonnet-5-5
+uv run inspect view
+```
+
+Put `INSPECT_EVAL_MODEL` and your API keys in a `.env` file (it is git-ignored) to avoid passing `--model` each time.
+
+The dev dependencies include the `anthropic` and `openai` SDKs. Inspect needs one package per model provider, so add the package for any other provider with `uv add --dev <package>`; Inspect's error message names the package when it is missing.
+
+## Checks and tests
+
+```bash
+make check   # ruff, basedpyright, inspect-evals-lint, generated README sections, pre-commit
+make test    # pytest
+```
+
+Slow tests run with `uv run pytest --runslow`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the other gates and markers.
+
+## Layout
+
+```text
+src/{{ package_name }}/        the eval: task module, eval.yaml{% if layout == 'multi-eval' %}, README.md{% endif %}
+
+{% if layout == 'multi-eval' %}
+tests/{{ package_name }}/      its tests
+{% else %}
+tests/test_{{ package_name }}.py   its tests
+{% endif %}
+{% if include_examples %}
+src/examples/            gpqa, agentic{% if include_llm_judge_example %}, llm_judge{% endif %}: worked examples, see Examples below
+tests/examples/          their tests
+{% endif %}
+agent_artefacts/trajectory_analysis/inspect_scout/   Scout scanners for the transcript audit
+```
+
+{% if include_examples %}
+## Examples
+
+`src/examples/` holds worked examples that are separate from your eval. They are not registered as a package, so run them by file path:
+
+```bash
+uv run inspect eval src/examples/gpqa/gpqa.py --limit 5
+uv run inspect eval src/examples/agentic/agentic.py                        # ReAct agent, needs Docker
+uv run inspect eval src/examples/agentic/agentic.py -T agent=claude_code   # Claude Code through inspect_swe
+{% if include_llm_judge_example %}
+uv run inspect eval src/examples/llm_judge/llm_judge.py
+{% endif %}
+```
+
+When your eval works, commit your changes and remove the examples with `uvx copier update --defaults --data include_examples=false`, then run `uv sync`. The update deletes `src/examples/` and `tests/examples/`, drops the `inspect-swe` dev dependency and the examples line in `AGENTS.md`, and applies any newer template release. An update never changes `README.md`, so delete this section and the two examples lines under Layout by hand.
+
+{% endif %}
+## Skills
+
+The `inspect-evals` skills (create-eval, investigate-dataset, ensure-test-coverage, read-eval-logs, check-trajectories-workflow, eval-validity-review, eval-report-workflow) come from [Generality-Labs/agent-skills](https://github.com/Generality-Labs/agent-skills).
+
+- Claude Code: open this folder and trust it. The plugin loads from `.claude/settings.json`; skills appear as `/inspect-evals:<name>`.
+- Codex: `codex plugin marketplace add Generality-Labs/agent-skills` then `codex plugin add inspect-evals@generality`, once per machine.
+- Other agents: `npx skills add Generality-Labs/agent-skills --agent <agent>`.
+
+## Keeping up with the template
+
+{% if use_template_update %}
+A weekly workflow runs `copier update` and opens a pull request when the template changed.
+{% else %}
+Run `uvx copier update` to pull template changes.
+{% endif %}
+`README.md`, `src/{{ package_name }}/` and `tests/{{ package_name }}/` are never overwritten by an update.
+{% if layout == 'multi-eval' %}
+
+## Eval documentation
+
+See [src/{{ package_name }}/README.md](src/{{ package_name }}/README.md).
+{% endif %}

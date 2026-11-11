@@ -1,0 +1,6 @@
+# Every action here is third-party; require full commit-SHA pins.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": hash-pin

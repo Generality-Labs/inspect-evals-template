@@ -1,0 +1,10 @@
+{% if layout == 'single-eval' %}
+{% include "includes/eval_readme.md.jinja" %}
+
+{% else %}
+# {{ eval_name }}
+
+{{ eval_description }}
+
+{% endif %}
+{% include "includes/repo_readme.md.jinja" %}

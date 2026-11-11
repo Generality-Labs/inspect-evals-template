@@ -1,0 +1,116 @@
+_subdirectory: template
+_min_copier_version: "9.0.0"
+
+# Trim block-tag newlines so conditionals don't leave stray blank lines in
+# rendered text/markdown (keeps mdformat happy on a fresh scaffold).
+_envops:
+  trim_blocks: true
+  lstrip_blocks: true
+  keep_trailing_newline: true
+
+# The author's eval, its tests and the repo README are never overwritten by
+# `copier update`; everything else is a managed copy that updates refresh.
+# The leading slash limits the README pattern to the repo root: copier re-creates
+# a missing skip-if-exists file, which would bring back the README of a deleted example.
+_skip_if_exists:
+  - /README.md
+  - "src/{{ package_name }}/"
+  - "tests/{{ package_name }}/"
+  - "tests/test_{{ package_name }}.py"
+
+_message_after_copy: |
+  Eval repo "{{ eval_name }}" created.
+
+  Next steps:
+    cd {{ eval_name }}
+    git init
+    uv sync                      # creates uv.lock; CI needs it committed
+    uv run pre-commit install    # needs the git repo from the line above
+    git add -A && git commit -m "Initial commit from inspect-evals-template"
+
+  Then open the folder in Claude Code and trust it: the inspect-evals skills load from .claude/settings.json.
+  Codex and other agents: see README.md, "Skills".
+
+eval_name:
+  type: str
+  help: Eval name in kebab-case, used for the repo, the distribution and the package (e.g. "lab-bench")
+  validator: >-
+    {% if not (eval_name | regex_search('^[a-z][a-z0-9]*(-[a-z0-9]+)*$')) %}
+    eval_name must be kebab-case: lowercase letters and digits, single hyphens between words
+    {% elif eval_name in [
+      'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
+      'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from',
+      'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not',
+      'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
+      'examples', 'tests', 'src'
+    ] %}
+    eval_name is reserved by Python or the template; choose another name
+    {% endif %}
+
+eval_description:
+  type: str
+  help: One-line description of the eval, used in pyproject.toml, README.md and eval.yaml
+
+github_owner:
+  type: str
+  help: GitHub account or organisation the repo lives under (used for URLs)
+  default: Generality-Labs
+
+github_username:
+  type: str
+  help: Your GitHub username, listed as the eval's contributor in eval.yaml and the README
+  default: "{{ github_owner }}"
+
+author_name:
+  type: str
+  help: Author name for pyproject.toml and the LICENSE
+
+author_email:
+  type: str
+  help: Author email for pyproject.toml
+
+python_version:
+  type: str
+  help: Primary Python version (used for .python-version, CI, and the requires-python floor)
+  default: "3.12"
+
+layout:
+  type: str
+  help: Repo layout; pick the one an existing repo already has
+  choices:
+    "Tests under tests/<package>/, README in src/<package>/ (multi-eval)": multi-eval
+    "Tests flat under tests/, README at the repo root (single-eval)": single-eval
+  default: multi-eval
+
+include_examples:
+  type: bool
+  help: Include the example evals (gpqa, agentic) under src/examples/? `copier update --defaults --data include_examples=false` removes them later.
+  default: true
+
+include_llm_judge_example:
+  type: bool
+  help: Also include the llm_judge example (model-graded scoring)?
+  default: false
+  when: "{{ include_examples }}"
+
+use_template_update:
+  type: bool
+  # Adds a scheduled workflow that runs `copier update` and opens a PR when the
+  # template's files change. Declining doesn't block updates: .copier-answers.yml
+  # is written either way, so `uvx copier update` still works by hand.
+  help: Open a PR automatically when the template changes? (weekly `copier update`)
+  default: true
+
+license:
+  type: str
+  help: License for the project
+  choices:
+    "MIT (permissive open source; writes a LICENSE file)": MIT
+    "Proprietary (all rights reserved; no LICENSE file)": Proprietary
+  default: MIT
+
+# Derived, not prompted.
+package_name:
+  type: str
+  default: "{{ eval_name | replace('-', '_') }}"
+  when: false

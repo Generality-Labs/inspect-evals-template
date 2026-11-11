@@ -1,0 +1,10 @@
+title: "{{ eval_name }}"
+description: |
+  {{ eval_description }}
+group: Knowledge # pick the group used by the inspect_evals listing for this benchmark
+contributors:
+  - {{ github_username }}
+version: "1-A"
+tasks:
+  - name: {{ package_name }}
+    dataset_samples: 2

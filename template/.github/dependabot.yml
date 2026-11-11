@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Bump the SHA-pinned GitHub Actions (opens PRs with changelogs + the new pin).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7 # don't adopt a release until it's had time to be vetted/yanked
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      # Generality Labs' reusable workflows are referenced by moving major tag
+      # on purpose (see .github/zizmor.yml), so template CI fixes flow in
+      # without a bump PR per release. Left un-ignored, Dependabot rewrites
+      # `@v1` to a fixed `@v1.x.y` and re-bumps it on every release, and
+      # `copier update` restores the moving tag, so the two fight forever.
+      - dependency-name: "Generality-Labs/*"
+
+  # Keep Python dependencies (pyproject.toml + uv.lock) current.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns: ["*"]

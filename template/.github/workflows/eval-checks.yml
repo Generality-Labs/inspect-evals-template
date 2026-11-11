@@ -1,0 +1,43 @@
+name: Eval checks
+
+# The checks specific to an Inspect eval repo. Ruff, basedpyright, pytest and
+# the pre-commit stack run in ci.yml through the shared python-ci workflow.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: inspect-evals-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint the evaluation
+        run: uv run inspect-evals-lint --all --output-format github
+
+  readmes:
+    name: Generated README sections
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Check the generated sections are current
+        run: uv run inspect-evals-readmes generate --check

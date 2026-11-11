@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=77"] # 77 is the first to accept an SPDX string in [project] license
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ eval_name }}"
+version = "0.1.0"
+description = {{ eval_description | to_json(ensure_ascii=False) }}
+readme = "README.md"
+license = "{{ 'LicenseRef-Proprietary' if license == 'Proprietary' else license }}"
+authors = [{ name = {{ author_name | to_json(ensure_ascii=False) }}, email = {{ author_email | to_json(ensure_ascii=False) }} }]
+requires-python = ">={{ python_version }}"
+dependencies = [
+    "inspect_ai>=0.3.262",
+    "inspect-evals-utils[huggingface]==0.3.0",
+]
+
+[project.urls]
+Repository = "https://github.com/{{ github_owner }}/{{ eval_name }}"
+Issues = "https://github.com/{{ github_owner }}/{{ eval_name }}/issues"
+
+# Registers the package so `inspect eval {{ package_name }}/<task>` finds its tasks.
+[project.entry-points.inspect_ai]
+{{ package_name }} = "{{ package_name }}"
+
+[dependency-groups]
+dev = [
+    "anthropic>=2.0", # with openai, the SDKs behind the `--model` commands in the READMEs
+    "basedpyright>=1.40",
+    "inspect-evals-lint==0.13.0",
+    "inspect-scout>=0.6.2", # used by agent_artefacts/trajectory_analysis/inspect_scout/
+{% if include_examples %}
+    "inspect-swe>=0.2.72", # the agentic example's claude_code agent
+{% endif %}
+    "openai>=3.4",
+    "pre-commit>=4.0",
+    "pytest>=8.4",
+    "pytest-asyncio",
+    "pytest-dotenv",
+    "pytest-inspect-evals[huggingface]==0.4.0",
+    "pytest-mock",
+    "ruff==0.17.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["{{ package_name }}*"] # examples/ stays out of the wheel
+
+[tool.setuptools.package-data]
+"*" = ["eval.yaml"]
+
+# Layout preset: multi-eval (tests/<package>/, src/<package>/README.md) or
+# single-eval (flat tests/, README at the root). A hybrid repo keeps a preset and
+# sets tests_layout or readme_location here on top of it.
+[tool.inspect-evals-lint]
+preset = "{{ layout }}"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-rA --durations=10 --color=yes"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+log_level = "WARNING"
+env_files = [".env"]
+# Test gates and markers come from pytest-inspect-evals. Dataset-download tests
+# run by default; set RUN_DATASET_DOWNLOAD_TESTS=0 to skip them.
+inspect_evals_dataset_download = true
+
+[tool.basedpyright]
+pythonVersion = "{{ python_version }}"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+exclude = [".venv", "agent_artefacts", "build"]
+
+[tool.ruff]
+line-length = 100
+src = ["src"]
+target-version = "py{{ python_version | replace('.', '') }}"
+# *.md: ruff formats Python blocks in Markdown, and the README generator writes them its own way.
+extend-exclude = ["agent_artefacts", "*.md"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "D",     # pydocstyle
+    "C4",    # flake8-comprehensions
+    "PT",    # flake8-pytest-style
+    "PIE",   # flake8-pie
+    "DTZ",   # flake8-datetimez (timezone-aware datetimes)
+    "ISC",   # implicit-str-concat (catches missing commas)
+    "ASYNC", # flake8-async
+    "N",     # pep8-naming
+    "FURB",  # refurb (modernization)
+    "RUF",   # ruff-specific rules
+    "PLE",   # pylint errors
+    "PLW",   # pylint warnings
+]
+ignore = [
+    "E501",   # line-too-long: the formatter owns line length
+    "D10",    # missing docstrings
+    "D415",   # first-line punctuation
+    "ISC001", # single-line implicit concat conflicts with the formatter
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/{tests,examples}/**" = ["D", "PLR2004"] # tests and examples skip docstring linting
