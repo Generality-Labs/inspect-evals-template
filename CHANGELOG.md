@@ -31,7 +31,7 @@ Two things about versions here:
 - A skeleton eval (`src/<package>/`), its `eval.yaml`, README with the generated sections plus "Deviations from the original implementation" and "Architecture" sections, and tests.
 - `AGENTS.md` (with `CLAUDE.md` pointing at it) and a short `CONTRIBUTING.md`.
 - `docs/MIGRATING.md` for repos created from v1.x.
-- Questions `github_username`, `layout`, `include_examples`, `include_llm_judge_example`, `use_claude_review`, `use_template_update`, `license`.
+- Questions `github_username`, `layout`, `include_examples`, `include_llm_judge_example`, `use_template_update`, `license`.
 - The `anthropic` and `openai` SDKs in the dev dependencies, so the `--model` commands in the generated READMEs run after `uv sync`.
 - An Examples section in the generated README, with a run command for each example and the `copier update --defaults --data include_examples=false` command that removes them.
 
@@ -41,6 +41,7 @@ Two things about versions here:
 - `tools/` (all nine files) and their tests.
 - `src/utils/` and `tests/utils/`.
 - `.claude/skills/`.
+- `claude-review.yaml` and the `claude-setup` action. v2.0 has no Claude review workflow; a repo migrating from v1.x deletes both files, or keeps them and makes them pass the zizmor hook (see `docs/MIGRATING.md`).
 - `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` (linked from `AGENTS.md` instead).
 - The `simple_qa` example.
 - `mypy` and `setuptools_scm`.

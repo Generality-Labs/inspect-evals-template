@@ -30,7 +30,7 @@ BASE_ANSWERS: dict[str, object] = {
 ANSWER_SETS: dict[str, dict[str, object]] = {
     "defaults": {},
     "no-examples": {"include_examples": False},
-    "full": {"use_claude_review": True, "include_llm_judge_example": True},
+    "full": {"include_llm_judge_example": True},
     "single-eval": {"layout": "single-eval", "include_examples": False},
 }
 

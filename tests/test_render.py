@@ -437,12 +437,12 @@ def test_examples_follow_the_answers(rendered: Rendered) -> None:
     assert not (examples / "simple_qa").exists()
 
 
-def test_claude_review_present_only_when_asked(rendered: Rendered) -> None:
-    wants = bool(rendered.answers.get("use_claude_review", False))
-    assert (rendered.path / ".github/workflows/claude-review.yaml").exists() == wants
-    assert (rendered.path / ".github/actions/claude-setup/action.yaml").exists() == wants
-    zizmor = (rendered.path / ".github/zizmor.yml").read_text()
-    assert ("claude-review.yaml" in zizmor) == wants
+def test_no_claude_review_workflow(rendered: Rendered) -> None:
+    # v2.0 does not ship the Claude review workflow that v1.x repos had.
+    assert not (rendered.path / ".github/workflows/claude-review.yaml").exists()
+    assert not (rendered.path / ".github/actions").exists()
+    assert "claude-review" not in (rendered.path / ".github/zizmor.yml").read_text()
+    assert "use_claude_review" not in (rendered.path / ".copier-answers.yml").read_text()
 
 
 def test_claude_settings_enable_the_plugin(rendered: Rendered) -> None:
@@ -500,18 +500,6 @@ def test_answers_reach_the_skeleton(template_src: Path, tmp_path: Path) -> None:
     assert "Counts widgets in images" in (out.path / "src/sample_eval/eval.yaml").read_text()
     assert "Counts widgets in images" in (out.path / "src/sample_eval/README.md").read_text()
     assert 'description = "Counts widgets in images"' in (out.path / "pyproject.toml").read_text()
-
-
-def test_claude_review_files_match_the_repo(template_src: Path, tmp_path: Path) -> None:
-    out = render(template_src, tmp_path / "review", use_claude_review=True)
-    workflow = (out.path / ".github/workflows/claude-review.yaml").read_text()
-    action = (out.path / ".github/actions/claude-setup/action.yaml").read_text()
-    assert "MANAGED FILE" not in workflow
-    assert "MANAGED FILE" not in action
-    assert "Agent-Checkable Standards" not in workflow
-    help_text = yaml.safe_load((ROOT / "copier.yml").read_text())["use_claude_review"]["help"]
-    assert "ANTHROPIC_ROLE_ARN" in help_text
-    assert "ANTHROPIC_API_KEY" not in help_text
 
 
 def test_adopting_an_existing_repo_replaces_managed_files(
