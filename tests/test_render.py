@@ -225,6 +225,19 @@ def inspect_eval(r: Rendered, log_dir: Path, *args: str) -> None:
     )
 
 
+MODEL_PROVIDER = re.compile(r"--model (\w+)/")
+
+
+def test_docs_name_model_providers_whose_sdk_is_installed(synced: Rendered) -> None:
+    # Inspect ships without the provider SDKs, so a documented `--model` command
+    # fails on a fresh `uv sync` unless the SDK is a dependency.
+    docs = [synced.path / "README.md", *synced.path.glob("src/**/README.md")]
+    providers = {name for doc in docs for name in MODEL_PROVIDER.findall(doc.read_text())}
+    assert "anthropic" in providers  # the first command in README.md
+    for provider in sorted(providers):
+        run(synced.path, "uv", "run", "python", "-c", f"import {provider}")
+
+
 def test_skeleton_runs_by_file_path(synced: Rendered, tmp_path: Path) -> None:
     # Inspect loads a task file given by path outside its package, so the module
     # cannot use __package__ to find eval.yaml.

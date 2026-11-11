@@ -26,12 +26,14 @@ Issues = "https://github.com/{{ github_owner }}/{{ eval_name }}/issues"
 
 [dependency-groups]
 dev = [
+    "anthropic>=2.0", # with openai, the SDKs behind the `--model` commands in the READMEs
     "basedpyright>=1.40",
     "inspect-evals-lint==0.13.0",
     "inspect-scout>=0.6.2", # used by agent_artefacts/trajectory_analysis/inspect_scout/
 {% if include_examples %}
     "inspect-swe>=0.2.72", # the agentic example's claude_code agent
 {% endif %}
+    "openai>=3.4",
     "pre-commit>=4.0",
     "pytest>=8.4",
     "pytest-asyncio",
