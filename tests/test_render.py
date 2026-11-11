@@ -511,7 +511,68 @@ def test_claude_review_files_match_the_repo(template_src: Path, tmp_path: Path) 
     assert "Agent-Checkable Standards" not in workflow
     help_text = yaml.safe_load((ROOT / "copier.yml").read_text())["use_claude_review"]["help"]
     assert "ANTHROPIC_ROLE_ARN" in help_text
+    assert "AUTO_REVIEW_ALL_COMMITS" in help_text
     assert "ANTHROPIC_API_KEY" not in help_text
+
+
+# The zizmor audits a generated repo skips for claude-review.yaml. inspect_evals
+# skips the same three for the workflow this one is copied from.
+CLAUDE_REVIEW_ZIZMOR_IGNORES = {"dangerous-triggers", "secrets-outside-env", "self-repository"}
+
+
+def test_zizmor_skips_only_three_audits_for_claude_review(
+    template_src: Path, tmp_path: Path
+) -> None:
+    out = render(template_src, tmp_path / "review", use_claude_review=True)
+    rules = yaml.safe_load((out.path / ".github/zizmor.yml").read_text())["rules"]
+    ignoring = {
+        rule
+        for rule, config in rules.items()
+        if any("claude" in entry for entry in config.get("ignore", []))
+    }
+    assert ignoring == CLAUDE_REVIEW_ZIZMOR_IGNORES
+    assert not any(config.get("disable") for config in rules.values())
+
+
+def test_claude_review_checkouts_do_not_persist_credentials(
+    template_src: Path, tmp_path: Path
+) -> None:
+    out = render(template_src, tmp_path / "review", use_claude_review=True)
+    workflow = yaml.safe_load((out.path / ".github/workflows/claude-review.yaml").read_text())
+    action = yaml.safe_load((out.path / ".github/actions/claude-setup/action.yaml").read_text())
+    steps = workflow["jobs"]["review"]["steps"] + action["runs"]["steps"]
+    checkouts = [s for s in steps if s.get("uses", "").startswith("actions/checkout@")]
+    assert len(checkouts) == 2
+    assert all(s["with"]["persist-credentials"] is False for s in checkouts)
+
+
+def test_claude_review_restores_only_files_the_repo_has(template_src: Path, tmp_path: Path) -> None:
+    out = render(template_src, tmp_path / "review", use_claude_review=True)
+    workflow = yaml.safe_load((out.path / ".github/workflows/claude-review.yaml").read_text())
+    [restore] = [
+        s
+        for s in workflow["jobs"]["review"]["steps"]
+        if s.get("name") == "Use review config from workflow branch"
+    ]
+    match = re.search(r"for f in (.+?); do", restore["run"], flags=re.DOTALL)
+    assert match is not None
+    restored = match.group(1).replace("\\", " ").split()
+    assert restored
+    assert [f for f in restored if not (out.path / f).is_file()] == []
+
+
+def test_claude_review_names_nothing_a_generated_repo_lacks(
+    template_src: Path, tmp_path: Path
+) -> None:
+    out = render(template_src, tmp_path / "review", use_claude_review=True)
+    workflow = (out.path / ".github/workflows/claude-review.yaml").read_text()
+    action = (out.path / ".github/actions/claude-setup/action.yaml").read_text()
+    # inspect_evals has these workflows and this bot; a generated repo does not.
+    for name in ("dependabot-claude-review", "register-submission", "claude-code-aisi"):
+        assert name not in workflow, name
+    # The generated project has a dev dependency group and no test group or extra.
+    assert "--extra test" not in action
+    assert "--group test" not in action
 
 
 def test_adopting_an_existing_repo_replaces_managed_files(

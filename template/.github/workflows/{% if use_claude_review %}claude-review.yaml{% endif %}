@@ -1,3 +1,9 @@
+# Copied from .github/workflows/claude-review.yaml in UKGovernmentBEIS/inspect_evals
+# at commit d2b662494b. Differences: inspect_evals has separate workflows for
+# Dependabot pull requests and for submissions to its register, and this repo
+# has neither, so the check that defers to the first is shortened and the check
+# that defers to the second is removed. The restored files, the allowed bots and
+# the first prompt line name what a generated repo has.
 name: Claude Code Review
 on:
   pull_request_target:
@@ -11,28 +17,51 @@ on:
         required: true
         type: string
 
+# Per-PR concurrency. New comments / synchronize events on the same PR
+# cancel the prior run so reviewers always see a single up-to-date
+# comment thread rather than queued runs racing each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr_number || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
-  id-token: write # Required for OIDC
   contents: read
-  pull-requests: write # Required for making a PR comment
-  actions: read # Required for listing workflow runs
 
 jobs:
   review:
+    name: Claude code review
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read         # list prior workflow runs for self-imposed rate limiting
+      id-token: write       # AWS OIDC for Claude on Bedrock via aws-actions/configure-aws-credentials
+      pull-requests: write  # post review comments and minimize previous reviews
+      checks: read          # read check run status for PR context
+      statuses: read        # read commit statuses alongside check runs for gh pr checks
     env:
       PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.issue.number }}
     steps:
       - name: Validate trigger
         id: validate
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          AUTO_REVIEW_ALL_COMMITS: ${{ vars.AUTO_REVIEW_ALL_COMMITS }}
         with:
           script: |
             const eventName = context.eventName;
 
+            // Dependabot PRs are not reviewed automatically. Maintainers can
+            // still request a review with /review.
+            if (eventName === 'pull_request_target' &&
+                context.payload.pull_request.user.login === 'dependabot[bot]') {
+              core.info('Dependabot PR: no automatic review (use /review to request one)');
+              core.setOutput('skip', 'true');
+              return;
+            }
+
             if (eventName === 'pull_request_target') {
-              const autoReview = '${{ vars.AUTO_REVIEW_ALL_COMMITS }}';
+              const autoReview = process.env.AUTO_REVIEW_ALL_COMMITS;
               if (autoReview !== 'true') {
                 core.info('AUTO_REVIEW_ALL_COMMITS is not enabled — skipping automatic review (use /review to trigger manually)');
                 core.setOutput('skip', 'true');
@@ -82,15 +111,17 @@ jobs:
         with:
           ref: ${{ format('refs/pull/{0}/head', env.PR_NUMBER) }}
           fetch-depth: 0 # Fetch all history so merge-base can be found
+          persist-credentials: false
+          allow-unsafe-pr-checkout: true
 
       - name: Get PR Info
         if: steps.validate.outputs.skip != 'true'
         id: pr-info
         run: |
-          BASE_REF=$(gh pr view ${{ env.PR_NUMBER }} --json baseRefName -q .baseRefName)
-          PR_AUTHOR=$(gh pr view ${{ env.PR_NUMBER }} --json author -q .author.login)
-          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
-          echo "PR_AUTHOR=$PR_AUTHOR" >> "$GITHUB_ENV"
+          BASE_REF=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+          PR_AUTHOR=$(gh pr view "$PR_NUMBER" --json author -q .author.login)
+          echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+          echo "pr_author=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -99,34 +130,54 @@ jobs:
       - name: Use review config from workflow branch
         if: steps.validate.outputs.skip != 'true'
         run: |
-          for f in AGENTS.md EVALUATION_CHECKLIST.md BEST_PRACTICES.md \
-                   agent_artefacts/repo_context/REPO_CONTEXT.md \
-                   .github/actions/claude-setup/action.yaml; do
-            if git show origin/${{ github.ref_name }}:$f > /dev/null 2>&1; then
+          for f in AGENTS.md CLAUDE.md CONTRIBUTING.md; do
+            if git show "origin/${GITHUB_REF_NAME}:$f" > /dev/null 2>&1; then
               mkdir -p "$(dirname "$f")"
-              git show origin/${{ github.ref_name }}:$f > $f
+              git show "origin/${GITHUB_REF_NAME}:$f" > "$f"
             fi
           done
+
+      # The composite action at .github/actions/claude-setup/action.yaml is
+      # resolved against the workspace, which is the PR-checked-out tree.
+      # Restore it from the workflow branch as defence-in-depth, so the
+      # AWS-OIDC-configuring action.yaml always comes from trusted source.
+      # Fail-closed: any failure here aborts before Claude runs (unlike
+      # the optional-restore loop above, which tolerates missing files
+      # for the documentation set). See
+      # https://github.com/UKGovernmentBEIS/inspect_evals/issues/1687.
+      - name: Restore trusted claude-setup action
+        if: steps.validate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p .github/actions/claude-setup
+          git show "origin/${GITHUB_REF_NAME}:.github/actions/claude-setup/action.yaml" \
+            > .github/actions/claude-setup/action.yaml
 
       - name: Determine rate-limit actor
         if: >-
           steps.validate.outputs.skip != 'true'
           && github.event_name != 'workflow_dispatch'
         id: rate-limit-actor
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_AUTHOR: ${{ steps.pr-info.outputs.pr_author }}
         run: |
-          # For pull_request_target events, the actor is the PR author.
-          # For issue_comment (/review), the actor is the commenter.
-          if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            echo "actor=${{ github.actor }}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            # For issue_comment (/review), the actor is the commenter.
+            echo "actor=$GITHUB_ACTOR" >> "$GITHUB_OUTPUT"
           else
+            # For pull_request_target events, the actor is the PR author.
             echo "actor=$PR_AUTHOR" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check if actor should be rate-limited
         if: steps.rate-limit-actor.outputs.actor != ''
         id: should-rate-limit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ steps.rate-limit-actor.outputs.actor }}
         run: |
-          ACTOR="${{ steps.rate-limit-actor.outputs.actor }}"
           PERM=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${ACTOR}/permission" \
             --jq '.permission' 2>/dev/null || echo "none")
           echo "Actor $ACTOR has permission: $PERM"
@@ -135,14 +186,14 @@ jobs:
           else
             echo "should_rate_limit=true" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check rate limit
         if: steps.should-rate-limit.outputs.should_rate_limit == 'true'
         id: rate-limit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ steps.rate-limit-actor.outputs.actor }}
         run: |
-          ACTOR="${{ steps.rate-limit-actor.outputs.actor }}"
           ONE_HOUR_AGO=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)
 
           # Get recent run IDs and creation times for this actor (sorted ascending).
@@ -197,17 +248,18 @@ jobs:
           else
             echo "rate_limited=false" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Handle rate limit exceeded
         if: steps.rate-limit.outputs.rate_limited == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RETRY_AFTER: ${{ steps.rate-limit.outputs.retry_after }}
+          ACTOR: ${{ steps.rate-limit-actor.outputs.actor }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = Number(process.env.PR_NUMBER);
-            const retryAfter = '${{ steps.rate-limit.outputs.retry_after }}';
+            const retryAfter = process.env.RETRY_AFTER;
             const marker = '<!-- claude-rate-limit -->';
 
             // Minimize previous rate-limit comments
@@ -234,7 +286,7 @@ jobs:
             }
 
             // Post new rate-limit comment
-            const actor = '${{ steps.rate-limit-actor.outputs.actor }}';
+            const actor = process.env.ACTOR;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -260,6 +312,9 @@ jobs:
 
       - name: Precompute PR diff and metadata
         if: steps.gate.outputs.proceed == 'true'
+        env:
+          BASE_REF: ${{ steps.pr-info.outputs.base_ref }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MERGE_BASE=$(git merge-base "origin/$BASE_REF" HEAD)
           echo "Merge base: $MERGE_BASE"
@@ -267,22 +322,46 @@ jobs:
           git diff "$MERGE_BASE" HEAD > /tmp/PR_DIFF.patch
           echo "Changed files:"
           cat /tmp/PR_CHANGED_FILES.txt
-          gh pr view ${{ env.PR_NUMBER }} --json title,body,baseRefName,headRefName \
+          gh pr view "$PR_NUMBER" --json title,body,baseRefName,headRefName \
             --template $'Title: {{.title}}\nBase: {{.baseRefName}}\nHead: {{.headRefName}}\n\n{{.body}}' \
             > /tmp/PR_METADATA.txt
+
+      # Snapshot the PR's CI status for the Claude review prompt below.
+      # Outputs consumed by the `Run Claude Code` review step:
+      #   - steps.checks.outputs.status — one word: passing | pending | failing
+      #   - /tmp/PR_CHECKS.txt          — full `gh pr checks` output
+      # Status is derived from `gh pr checks` exit code:
+      # 0 = all passing, 8 = some still pending/in-progress, anything else = failing.
+      # Claude receives only this snapshot. Its current tool grant does not permit
+      # additional `gh` calls to fetch logs or annotations.
+      - name: Fetch PR checks
+        id: checks
+        if: steps.gate.outputs.proceed == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ env.PR_NUMBER }}
+        run: |
+          set +e
+          gh pr checks "$PR_NUMBER" > /tmp/PR_CHECKS.txt 2>&1
+          rc=$?
+          set -e
+          case "$rc" in
+            0) status=passing ;;
+            8) status=pending ;;
+            *) status=failing ;;
+          esac
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "rc=$rc"         >> "$GITHUB_OUTPUT"
+          echo "Checks status: $status (rc=$rc)"
 
       - name: Fetch previous review comments
         if: steps.gate.outputs.proceed == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PR_NUM: ${{ env.PR_NUMBER }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const prNumber = Number(process.env.PR_NUM);
+            const prNumber = Number(process.env.PR_NUMBER);
             const reviewPattern = /^## Claude Code Review(\r?\n){2}/;
 
             // We use GraphQL here instead of the REST API because the REST
@@ -358,13 +437,11 @@ jobs:
       - name: Fetch reviewer feedback
         if: steps.gate.outputs.proceed == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PR_NUM: ${{ env.PR_NUMBER }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const prNumber = Number(process.env.PR_NUM);
+            const prNumber = Number(process.env.PR_NUMBER);
             let content = `# Reviewer Feedback\n\n`;
             content += `This file contains review activity on this PR from human reviewers (bot comments are excluded).\n`;
             content += `Use this context to understand what has already been discussed, agreed, or disputed.\n\n`;
@@ -481,20 +558,30 @@ jobs:
       - name: Run Code Review with Claude
         if: steps.gate.outputs.proceed == 'true'
         id: claude-code
-        # Pinned: v1 floating tag updated to SDK 0.2.96 which breaks Bedrock SigV4 auth (403).
-        # Revert to @v1 once upstream is fixed.
-        uses: anthropics/claude-code-action@6e2bd52842c65e914eba5c8badd17560bd26b5de # v1 (SDK 0.2.92)
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
           use_bedrock: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           allowed_non_write_users: "*"
-          allowed_bots: "claude-code-aisi[bot]"
+          allowed_bots: "dependabot[bot]"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ env.PR_NUMBER }}
-            BASE BRANCH: origin/${{ env.BASE_REF }}
+            BASE BRANCH: origin/${{ steps.pr-info.outputs.base_ref }}
 
-            Please review this pull request against AGENTS.md and the inspect_evals guides it links (BEST_PRACTICES.md and EVALUATION_CHECKLIST.md).
+            Please review this pull request against AGENTS.md and CONTRIBUTING.md.
+
+            REVIEW CALIBRATION: Be direct and concise. Report only findings that are supported by evidence,
+            introduced or worsened by this PR, actionable within its scope, and likely to make a maintainer
+            request a change before merge. Do not report preferences, minor polish, speculative risks,
+            optional refactors, pre-existing problems, or similar problems in unchanged code. Do not ask for
+            follow-up issues. A review with no findings is a normal outcome. Do not add findings to meet a quota.
+            Consolidate findings with the same root cause and prefer no more than five. Check missing version
+            bumps, changelog entries, and tests when the repository standards require them. For shared code,
+            report affected callers only when this PR changes their behaviour.
+            Adjust investigation depth according to risk. Closely review changes that can affect evaluation
+            results, dependencies, CI, workflows, or agent permissions. Use a lightweight pass for documentation,
+            tests, generated output, and other changes that cannot affect scores or a security boundary.
 
             Note: The PR branch is already checked out. The PR diff has been precomputed from the merge base to avoid incorrect two-dot diffs that show unrelated changes from the base branch.
 
@@ -502,11 +589,16 @@ jobs:
             - /tmp/PR_CHANGED_FILES.txt — the definitive list of files changed in this PR
             - /tmp/PR_DIFF.patch — the full diff of this PR's changes
             - /tmp/PR_METADATA.txt — the PR title, description, and branch names
-            Do NOT run your own `git diff` to determine what files changed — the precomputed files are correct. You may still use `git diff` to inspect specific files or hunks if needed, but always use three-dot syntax: `git diff origin/${{ env.BASE_REF }}...HEAD -- <path>`.
-            Do NOT use `gh` commands — all PR context has been precomputed into the files above.
+            - /tmp/PR_CHECKS.txt — `gh pr checks` output for the PR head commit (glyphs: ✓ pass, X fail, * pending, - skipped)
+
+            Overall PR CI status at workflow start: ${{ steps.checks.outputs.status }} (one of: passing, pending, failing).
+            Review trigger: ${{ github.event_name }}. An `issue_comment` trigger here means someone requested `/review`.
+
+            Do NOT run your own `git diff` to determine what files changed — the precomputed files are correct. You may still use `git diff` to inspect specific files or hunks if needed, but always use three-dot syntax: `git diff origin/${{ steps.pr-info.outputs.base_ref }}...HEAD -- <path>`.
+            Do NOT use `gh` commands. All PR context has been precomputed into the files above, and `gh` is not included in the allowed tools.
 
             Other useful commands:
-            - To see commit history: `git log origin/${{ env.BASE_REF }}..HEAD`
+            - To see commit history: `git log origin/${{ steps.pr-info.outputs.base_ref }}..HEAD`
 
             IMPORTANT: You MUST write your final review to /tmp/SUMMARY.md as specified in the workflow. The CI system will read this file to post the PR comment.
 
@@ -514,29 +606,19 @@ jobs:
 
             IMPORTANT: If a tool call is denied due to permissions, it is permanently blocked and will never succeed. Do not retry it or attempt variations of the same command.
 
-            IMPORTANT: Before starting your review, read /tmp/CLAUDE_REVIEWS.md. This contains your own previous reviews on this PR (human discussion is in HUMAN_FEEDBACK.md). Use this to avoid repeating yourself:
-            - If you previously raised an issue and the PR author responded with justification, do NOT re-raise it. The human reviewer will decide if the justification is acceptable.
-            - If you previously raised an issue and it was simply ignored (no response or acknowledgement), mention it as a single line linking to the comment where it was originally raised, e.g.: "**[Previously raised]({url})**: brief description". Do not repeat the full analysis.
-            - Only provide full analysis for NEW issues not covered in previous reviews.
-            - On follow-up reviews, only raise NEW issues if they are major (e.g. security, correctness, significant design problems). Do not introduce new nitpicks in follow-up reviews, unless those minor issues were introduced in commits made since the most recent review.
+            IMPORTANT: The overall CI status (`${{ steps.checks.outputs.status }}`) is shown above. If it is `failing`, read `/tmp/PR_CHECKS.txt` to see which checks failed. Report a check failure only when the available check information and repository changes establish a finding. Do not infer a cause from the check name or status alone.
+            If the status is `pending`, treat pending checks as undecided and do not mention them. Their status is already visible on the PR.
 
-            IMPORTANT: Before starting your review, read /tmp/HUMAN_FEEDBACK.md. This is the single source for all human activity on this PR — formal reviews (approvals, change requests), inline code comments, and general discussion. Use this context to:
-            - Read through all discussion, reviews, and inline comments. For anything useful — whether it's a reviewer catching a real issue, a discussion thread surfacing an important design consideration, or a comment that reveals context about why something was done a certain way — take it into account in your review. Ignore anything that isn't useful.
-            - Do not re-raise issues that have already been identified by you or another reviewer, unless you have something new to add.
-            - If a reviewer raised something and the PR author addressed or justified it, consider it resolved only if you agree with the author's response.
-            - If a reviewer raised something that was ignored with no response, you may briefly note it as previously raised with a link.
-            - FEEDBACK STATUS SUMMARY: Include a "Reviewer Feedback Status" section in your review. For each piece of substantive reviewer feedback, determine its status by cross-referencing the discussion and the commit history:
-              - **Addressed**: the author made code changes in a subsequent commit that resolve the feedback. Cite the commit.
-              - **Responded**: the author replied but did not make code changes (e.g., justified the current approach). Note whether you agree.
-              - **Unaddressed**: no response and no code changes. Flag these clearly — they may have been missed.
-              This helps maintainers quickly see what's been handled and what still needs attention, especially when commit history is messy or the author didn't link responses to specific feedback.
-            - BUILDING ON REVIEWER INSIGHTS: When a reviewer or discussion thread surfaces a valid point that you missed, take it seriously. Think deeply about it: are there related issues in the same area? Does it point to a deeper structural problem you overlooked? Use it as a starting point to dig further into the code and add to the review.
-            - ENGAGING WITH REVIEWER FEEDBACK: If you encounter reviewer feedback that is clearly, demonstrably incorrect — e.g. a reviewer claims a function doesn't exist when it does, says the code has a bug that isn't actually there, or misreads what the code does — you should respectfully flag this in your review under a "Reviewer Feedback" section. Cite the specific comment and explain concisely why you believe it is incorrect, referencing the actual code. However:
-              - Only push back on clear factual errors or poor trade-off decisions where you can concretely articulate why the trade-off is bad. If a reviewer's suggestion is a matter of style, preference, or architecture opinion, defer to the human reviewer.
-              - Never be dismissive or condescending. Frame it as "I may be wrong, but looking at the code..." not "The reviewer is incorrect."
-              - When in doubt, don't push back. The bar for contradicting a human reviewer is high: you must be confident they are obviously wrong.
+            IMPORTANT: Before starting your review, read /tmp/CLAUDE_REVIEWS.md. This contains your own previous reviews on this PR (human discussion is in HUMAN_FEEDBACK.md). Use it only to avoid duplication:
+            - On an automatic `pull_request_target` follow-up, provide full analysis only for merge-relevant problems introduced by commits since the most recent review.
+            - On a manually requested `/review` (`issue_comment`) or `workflow_dispatch` run, review the current PR state.
+            - If a prior finding remains unresolved and the author has neither fixed it nor responded, carry it forward as one concise `**[Previously raised](url)**: description` line. Do not repeat its analysis.
+            - Do not carry forward fixed or responded-to findings. The human reviewer will decide whether an author's response is sufficient.
+            - If no new or carried-forward finding meets the reporting threshold, write one brief sentence confirming that outcome.
+
+            IMPORTANT: Before starting your review, read /tmp/HUMAN_FEEDBACK.md. Use it to understand decisions and avoid duplicating human comments. Do not audit, summarize, or grade the discussion, and do not include a reviewer-feedback status section. When a human has already raised a finding, leave it in that thread unless the current diff introduces a distinct merge-relevant problem. If a human comment makes a clearly incorrect factual claim about the code that could affect the merge decision, you may add one brief `## Reviewer Feedback` note that links to the comment and cites the relevant code. Do not challenge preferences, trade-offs, or architecture opinions. Omit the note when uncertain.
           claude_args: |
-            --model ${{ steps.setup.outputs.claude_model }} --allowedTools "Bash(git diff *),Bash(git log *),View,GlobTool,GrepTool,Read,Write"
+            --model ${{ steps.setup.outputs.claude_model }} --allowedTools "Bash(git diff *),Bash(git log *),Glob,Grep,Read,Write"
           show_full_output: true
 
       - name: Hide Previous Claude Review Comments

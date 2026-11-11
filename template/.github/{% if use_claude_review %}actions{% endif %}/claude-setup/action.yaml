@@ -6,7 +6,7 @@ description: >
 inputs:
   claude_model:
     description: 'Bedrock model ID to use with Claude Code.'
-    default: 'eu.anthropic.claude-opus-4-6-v1'
+    default: 'global.anthropic.claude-fable-5-1'
   skip_checkout:
     description: 'Set to "true" to skip the checkout step (when already checked out).'
     default: 'false'
@@ -33,6 +33,9 @@ runs:
       with:
         ref: ${{ inputs.checkout_ref }}
         fetch-depth: 0
+        # The calling workflow does not push, so this checkout never needs
+        # to leave the auto-minted GITHUB_TOKEN persisted in .git/config.
+        persist-credentials: false
 
     - if: ${{ inputs.install_python_deps == 'true' }}
       uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -45,7 +48,7 @@ runs:
     - if: ${{ inputs.install_python_deps == 'true' }}
       name: Install dependencies
       shell: bash
-      run: uv sync --frozen --extra test
+      run: uv sync --frozen
 
     - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
       with:

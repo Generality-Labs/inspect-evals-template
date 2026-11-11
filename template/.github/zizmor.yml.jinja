@@ -8,36 +8,24 @@ rules:
         "Generality-Labs/*": ref-pin
         "*": hash-pin
 {% if use_claude_review %}
-  # claude-review.yaml and its composite action predate this zizmor stack. The
-  # workflow runs on pull_request_target by design (it reviews pull requests from
-  # forks), and its github-script steps interpolate event data. A proper audit
-  # is tracked on inspect-evals-template; until then these audits skip it.
-  # unpinned-uses is not in the list: every action in both files is SHA-pinned.
+  # claude-review.yaml is copied from inspect_evals, which skips the same three
+  # audits for it. Every other audit runs on it.
+
+  # The workflow runs on pull_request_target and issue_comment so it can review
+  # pull requests from forks and answer /review comments. It checks out the pull
+  # request head without persisted credentials, restores claude-setup from the
+  # workflow branch before using it, and gives Claude read tools plus Write.
+  # Review this entry whenever the triggers or the checkout change.
   dangerous-triggers:
     ignore:
       - claude-review.yaml
-  template-injection:
-    ignore:
-      - claude-review.yaml
-  github-env:
-    ignore:
-      - claude-review.yaml
-  excessive-permissions:
-    ignore:
-      - claude-review.yaml
+  # The Bedrock role ARN is a repository secret. Moving it into a GitHub
+  # environment needs that environment set up in each generated repo.
   secrets-outside-env:
     ignore:
       - claude-review.yaml
-  artipacked:
-    ignore:
-      - claude-review.yaml
-      - action.yaml
-  anonymous-definition:
-    ignore:
-      - claude-review.yaml
-  concurrency-limits:
-    ignore:
-      - claude-review.yaml
+  # zizmor wants `uses: $/...` for local actions; actionlint 1.7.12 rejects that
+  # form (rhysd/actionlint#711).
   self-repository:
     ignore:
       - claude-review.yaml
