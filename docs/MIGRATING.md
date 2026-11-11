@@ -33,7 +33,17 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
 
 1. Review `git diff pyproject.toml` and put back your dependencies and entry point; keep the template's dependency groups and tool tables.
 
-1. Delete the v1.x files copier leaves behind: `MANAGED_FILES.md`, `.template-version`, `.template-sync-sha`, `.github/workflows/sync-template.yml`, `.github/workflows/sync-upstream.yml`, `.github/workflows/checks.yml`, `.github/workflows/pr-template-check.yml`, `.github/workflows/markdown-lint.yml`, `.github/workflows/claude-review.yaml`, `.github/actions/claude-setup/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.markdownlint.yaml`, `.markdownlintignore`, `tools/`, `tests/test_*.py` for the tools, `src/utils/`, `.claude/skills/`, `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` and `src/examples/simple_qa/`.
+1. Delete the v1.x files copier leaves behind: `MANAGED_FILES.md`, `.template-version`, `.template-sync-sha`, `.github/workflows/sync-template.yml`, `.github/workflows/sync-upstream.yml`, `.github/workflows/checks.yml`, `.github/workflows/pr-template-check.yml`, `.github/workflows/markdown-lint.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `.markdownlint.yaml`, `.markdownlintignore`, `tools/`, `tests/test_*.py` for the tools, `src/utils/`, `.claude/skills/`, `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` and `src/examples/simple_qa/`.
+
+1. Decide what to do with the Claude review workflow. A v1.x repo has `.github/workflows/claude-review.yaml` and `.github/actions/claude-setup/action.yaml`. v2.0 does not include them, and `copier` leaves them where they are. You can delete both files or keep them.
+
+   If you keep them, they have to pass the zizmor pre-commit hook, which CI also runs. The hook runs zizmor in auditor mode and fails on a finding of any severity. The generated `.github/zizmor.yml` skips no audits for these two files, and on the v1.5.0 versions the hook reports more than 30 findings. Run the hook by itself with:
+
+   ```bash
+   uv run pre-commit run zizmor --all-files
+   ```
+
+   Fix each finding, or add `# zizmor: ignore[<audit>]` with a reason at the end of the line it points to. inspect_evals maintains newer versions of [the workflow](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/.github/workflows/claude-review.yaml) and [the action](https://github.com/UKGovernmentBEIS/inspect_evals/blob/main/.github/actions/claude-setup/action.yaml) with fewer findings. They refer to files and workflows that only inspect_evals has, so read them before copying.
 
 1. Replace the helper imports:
 

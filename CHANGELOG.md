@@ -41,7 +41,7 @@ Two things about versions here:
 - `tools/` (all nine files) and their tests.
 - `src/utils/` and `tests/utils/`.
 - `.claude/skills/`.
-- `claude-review.yaml` and the `claude-setup` action. v2.0 has no Claude review workflow; a repo migrating from v1.x deletes both files (see `docs/MIGRATING.md`).
+- `claude-review.yaml` and the `claude-setup` action. v2.0 has no Claude review workflow; a repo migrating from v1.x deletes both files, or keeps them and makes them pass the zizmor hook (see `docs/MIGRATING.md`).
 - `AUTOMATED_CHECKS.md`, `BEST_PRACTICES.md`, `EVALUATION_CHECKLIST.md`, `TASK_VERSIONING.md` (linked from `AGENTS.md` instead).
 - The `simple_qa` example.
 - `mypy` and `setuptools_scm`.
