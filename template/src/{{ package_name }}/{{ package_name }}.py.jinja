@@ -2,7 +2,7 @@
 {% set python_description = eval_description | replace('\\', '\\u005c') | replace('"', '\\u0022') %}
 """{{ python_description }}"""
 
-from importlib import resources
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -13,7 +13,9 @@ from inspect_ai.solver import generate
 
 
 def _eval_version() -> str:
-    text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
+    # Read next to this file: Inspect also loads the module by file path, where
+    # __package__ does not name the package.
+    text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
     return str(yaml.safe_load(text)["version"])
 
 

@@ -25,7 +25,7 @@ inspect eval examples/gpqa_diamond -T high_level_domain=Biology
 inspect eval examples/gpqa_diamond -T subdomain=Genetics
 """
 
-from importlib import resources
+from pathlib import Path
 from typing import Any, Literal, get_args
 
 import yaml
@@ -60,7 +60,9 @@ GPQASubdomain = Literal[
 
 
 def _eval_version() -> str:
-    text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
+    # Read next to this file: Inspect also loads the module by file path, where
+    # __package__ does not name the package.
+    text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
     return str(yaml.safe_load(text)["version"])
 
 

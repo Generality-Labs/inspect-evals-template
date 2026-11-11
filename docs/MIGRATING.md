@@ -41,13 +41,13 @@ v1.x copied files into the repo and synced them with a workflow. v2.0 is a copie
    - `from utils.metadata import load_version_from_yaml` and `EVAL_VERSION = load_version_from_yaml("my_eval")` become a reader in the task module:
 
      ```python
-     from importlib import resources
+     from pathlib import Path
 
      import yaml
 
 
      def _eval_version() -> str:
-         text = resources.files(__package__).joinpath("eval.yaml").read_text(encoding="utf-8")
+         text = (Path(__file__).parent / "eval.yaml").read_text(encoding="utf-8")
          return str(yaml.safe_load(text)["version"])
 
 

@@ -208,6 +208,39 @@ def test_make_check(synced: Rendered) -> None:
     run(synced.path, "make", "check")
 
 
+def inspect_eval(r: Rendered, log_dir: Path, *args: str) -> None:
+    run(
+        r.path,
+        "uv",
+        "run",
+        "inspect",
+        "eval",
+        *args,
+        "--model",
+        "mockllm/model",
+        "--log-dir",
+        str(log_dir),
+        "--display",
+        "none",
+    )
+
+
+def test_skeleton_runs_by_file_path(synced: Rendered, tmp_path: Path) -> None:
+    # Inspect loads a task file given by path outside its package, so the module
+    # cannot use __package__ to find eval.yaml.
+    inspect_eval(synced, tmp_path, "src/sample_eval/sample_eval.py")
+
+
+def test_skeleton_runs_by_registered_name(synced: Rendered, tmp_path: Path) -> None:
+    inspect_eval(synced, tmp_path, "sample_eval/sample_eval")
+
+
+def test_gpqa_example_runs_by_file_path(synced: Rendered, tmp_path: Path) -> None:
+    if not synced.answers.get("include_examples", True):
+        pytest.skip("this answer set has no examples")
+    inspect_eval(synced, tmp_path, "src/examples/gpqa/gpqa.py", "--limit", "1", "--epochs", "1")
+
+
 SHA_PIN = re.compile(r"^[0-9a-f]{40}$")
 
 
