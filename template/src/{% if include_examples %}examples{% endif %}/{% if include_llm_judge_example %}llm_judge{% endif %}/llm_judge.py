@@ -3,6 +3,10 @@
 Shows the pattern for evaluations like Healthbench: generate a response to an
 open-ended question, then use a judge model to evaluate correctness against
 a reference answer and grading criteria.
+
+Run it from the repo root:
+
+inspect eval src/examples/llm_judge/llm_judge.py
 """
 
 from inspect_ai import Task, task
@@ -78,10 +82,11 @@ DATASET = [
 def llm_judge() -> Task:
     r"""LLM-graded evaluation of open-ended technical responses.
 
-    The judge model can be overridden via CLI:
+    model_graded_qa grades with the model bound to the "grader" role, and with
+    the evaluated model when the role is unbound. Bind it from the CLI:
 
-        inspect eval examples/llm_judge --model openai/gpt-4o \
-            --model-roles judge=anthropic/claude-sonnet-4-20250514
+        inspect eval src/examples/llm_judge/llm_judge.py --model openai/gpt-5-nano \
+            --model-role grader=anthropic/claude-sonnet-5-5
     """
     return Task(
         dataset=DATASET,

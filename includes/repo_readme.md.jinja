@@ -37,6 +37,21 @@ tests/examples/          their tests
 agent_artefacts/trajectory_analysis/inspect_scout/   Scout scanners for the transcript audit
 ```
 
+{% if include_examples %}
+## Examples
+
+`src/examples/` holds worked examples that are separate from your eval. They are not registered as a package, so run them by file path:
+
+```bash
+uv run inspect eval src/examples/gpqa/gpqa.py --limit 5
+uv run inspect eval src/examples/agentic/agentic.py                        # ReAct agent, needs Docker
+uv run inspect eval src/examples/agentic/agentic.py -T agent=claude_code   # Claude Code through inspect_swe
+{% if include_llm_judge_example %}
+uv run inspect eval src/examples/llm_judge/llm_judge.py
+{% endif %}
+```
+
+{% endif %}
 ## Skills
 
 The `inspect-evals` skills (create-eval, investigate-dataset, ensure-test-coverage, read-eval-logs, check-trajectories-workflow, eval-validity-review, eval-report-workflow) come from [Generality-Labs/agent-skills](https://github.com/Generality-Labs/agent-skills).

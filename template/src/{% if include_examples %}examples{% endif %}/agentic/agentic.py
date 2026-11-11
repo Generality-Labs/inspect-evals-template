@@ -4,6 +4,14 @@ Shows the pattern for evaluations like GAIA: give an agent access to tools
 (bash, python) in a sandboxed environment and score whether it finds the
 correct answer. The `agent` parameter selects Inspect's ReAct agent or Claude
 Code (through inspect_swe), so the same task can be run with both.
+
+Both commands need Docker running, and run from the repo root:
+
+# Inspect's ReAct agent with bash and python tools
+inspect eval src/examples/agentic/agentic.py
+
+# Claude Code through inspect_swe
+inspect eval src/examples/agentic/agentic.py -T agent=claude_code
 """
 
 from pathlib import Path

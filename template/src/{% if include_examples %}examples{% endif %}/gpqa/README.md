@@ -12,62 +12,17 @@ and [simple-evals](https://github.com/openai/simple-evals/blob/main/gpqa_eval.py
 Contributed by [@jjallaire](https://github.com/jjallaire)
 <!-- /Contributors: Automatically Generated -->
 
-<!-- Usage: Automatically Generated -->
 ## Usage
 
-First, install dependencies:
+The examples are not registered as a package, so run this one by file path from the repo root:
 
 ```bash
-uv sync
+uv run inspect eval src/examples/gpqa/gpqa.py --model openai/gpt-5-nano
+uv run inspect eval src/examples/gpqa/gpqa.py --model openai/gpt-5-nano --limit 10 --epochs 1
+uv run inspect eval src/examples/gpqa/gpqa.py --model openai/gpt-5-nano -T high_level_domain=Biology
 ```
 
-Then run evaluations:
-
-```bash
-uv run inspect eval examples.gpqa/gpqa_diamond --model openai/gpt-5-nano
-```
-
-You can also import tasks as Python objects:
-
-```python
-from inspect_ai import eval
-from examples.gpqa import gpqa_diamond
-eval(gpqa_diamond)
-```
-
-If your directory name doesn't match your package name but you have registered your eval task, you can also run:
-
-```bash
-uv run inspect eval gpqa_diamond --model openai/gpt-5-nano
-```
-
-After running evaluations, view logs with:
-
-```bash
-uv run inspect view
-```
-
-If you don't want to specify `--model` each time, create a `.env` file:
-
-```bash
-INSPECT_EVAL_MODEL=anthropic/claude-opus-4-1-20250805
-ANTHROPIC_API_KEY=<anthropic-api-key>
-```
-<!-- /Usage: Automatically Generated -->
-
-<!-- Options: Automatically Generated -->
-## Options
-
-You can control a variety of options from the command line. For example:
-
-```bash
-uv run inspect eval examples.gpqa/gpqa_diamond --limit 10
-uv run inspect eval examples.gpqa/gpqa_diamond --max-connections 10
-uv run inspect eval examples.gpqa/gpqa_diamond --temperature 0.5
-```
-
-See `uv run inspect eval --help` for all available options.
-<!-- /Options: Automatically Generated -->
+View the logs with `uv run inspect view`. See `uv run inspect eval --help` for all available options.
 
 <!-- Parameters: Automatically Generated -->
 ## Parameters

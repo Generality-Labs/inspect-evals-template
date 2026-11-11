@@ -9,20 +9,23 @@ Based on: https://github.com/openai/simple-evals/blob/main/gpqa_eval.py
 Adapted from the inspect_evals implementation:
 https://github.com/UKGovernmentBEIS/inspect_evals/tree/main/src/inspect_evals/gpqa
 
+The examples are not registered as a package, so run this one by file path
+from the repo root:
+
 # eval for default epochs (4)
-inspect eval examples/gpqa_diamond
+inspect eval src/examples/gpqa/gpqa.py
 
 # eval with 1 epoch
-inspect eval examples/gpqa_diamond --epochs 1
+inspect eval src/examples/gpqa/gpqa.py --epochs 1
 
 # without chain of thought
-inspect eval examples/gpqa_diamond -T cot=false
+inspect eval src/examples/gpqa/gpqa.py -T cot=false
 
 # filter by high-level domain
-inspect eval examples/gpqa_diamond -T high_level_domain=Biology
+inspect eval src/examples/gpqa/gpqa.py -T high_level_domain=Biology
 
 # filter by subdomain
-inspect eval examples/gpqa_diamond -T subdomain=Genetics
+inspect eval src/examples/gpqa/gpqa.py -T subdomain=Genetics
 """
 
 from pathlib import Path

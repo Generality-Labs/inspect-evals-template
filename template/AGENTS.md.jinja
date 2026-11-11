@@ -24,7 +24,7 @@ This project uses `uv`. Do not use `pip`, bare `python` or bare `pytest`.
 - `tests/test_{{ package_name }}.py`: the tests.
 {% endif %}
 {% if include_examples %}
-- `src/examples/`: worked examples (gpqa, agentic{% if include_llm_judge_example %}, llm_judge{% endif %}). They are not part of the eval and can be deleted.
+- `src/examples/`: worked examples (gpqa, agentic{% if include_llm_judge_example %}, llm_judge{% endif %}). They are not part of the eval and can be deleted. Run one by file path: `uv run inspect eval src/examples/<name>/<name>.py`.
 {% endif %}
 - `agent_artefacts/trajectory_analysis/inspect_scout/`: Scout scanners for the transcript audit.
 

@@ -254,6 +254,40 @@ def test_gpqa_example_runs_by_file_path(synced: Rendered, tmp_path: Path) -> Non
     inspect_eval(synced, tmp_path, "src/examples/gpqa/gpqa.py", "--limit", "1", "--epochs", "1")
 
 
+EVAL_TARGET = re.compile(r"inspect eval (\S+)")
+
+
+def test_documented_eval_targets_exist(rendered: Rendered) -> None:
+    # Only sample_eval has an inspect_ai entry point, so any other target has to
+    # be the path of a rendered task file.
+    docs = [
+        *(rendered.path / name for name in ("README.md", "AGENTS.md", "CONTRIBUTING.md")),
+        *rendered.path.glob("src/**/README.md"),
+        *rendered.path.glob("src/**/*.py"),
+    ]
+    targets = {(doc, target) for doc in docs for target in EVAL_TARGET.findall(doc.read_text())}
+    assert targets
+    for doc, target in sorted(targets):
+        if target.startswith("--") or "<" in target:  # `inspect eval --help`, placeholders
+            continue
+        where = (str(doc.relative_to(rendered.path)), target)
+        if target.endswith(".py"):
+            assert (rendered.path / target).is_file(), where
+        else:
+            assert target.split("/")[0] == "sample_eval", where
+
+
+def test_readme_gives_a_run_command_for_each_example(rendered: Rendered) -> None:
+    readme = (rendered.path / "README.md").read_text()
+    examples = sorted(p.parent.name for p in rendered.path.glob("src/examples/*/eval.yaml"))
+    for name in examples:
+        assert f"uv run inspect eval src/examples/{name}/{name}.py" in readme
+    if examples:
+        assert "-T agent=claude_code" in readme
+    else:
+        assert "src/examples" not in readme
+
+
 SHA_PIN = re.compile(r"^[0-9a-f]{40}$")
 
 
