@@ -451,7 +451,7 @@ def test_claude_settings_enable_the_plugin(rendered: Rendered) -> None:
     assert marketplace == {
         "source": "github",
         "repo": "Generality-Labs/agent-skills",
-        "ref": "v1.0.0",
+        "ref": "v1.0.1",
     }
     assert settings["enabledPlugins"] == {"inspect-evals@generality": True}
     assert "Bash(uv run basedpyright:*)" in settings["permissions"]["allow"]

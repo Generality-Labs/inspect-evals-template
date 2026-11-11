@@ -24,7 +24,7 @@
       "source": {
         "source": "github",
         "repo": "Generality-Labs/agent-skills",
-        "ref": "v1.0.0"
+        "ref": "v1.0.1"
       }
     }
   },
